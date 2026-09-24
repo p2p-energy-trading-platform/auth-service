@@ -1,0 +1,13 @@
+# Ignore Docker and config files
+docker-compose.yml
+docker-compose*.yml
+Dockerfile
+*.md
+*.json
+*.yml
+*.yaml
+
+# Ignore build artifacts and dependencies
+node_modules/
+dist/
+coverage/
