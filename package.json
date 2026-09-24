@@ -14,10 +14,10 @@
     "format:check": "oxfmt --check src test",
     "check-config": "tsx scripts/check-config.ts",
     "db:create": "goose -dir migrations create",
-    "db:up": "dotenv -- goose -dir migrations postgres \"$DATABASE_URL\" up",
-    "db:down": "dotenv -- goose -dir migrations postgres \"$DATABASE_URL\" down",
-    "db:status": "dotenv -- goose -dir migrations postgres \"$DATABASE_URL\" status",
-    "db:reset": "dotenv -- goose -dir migrations postgres \"$DATABASE_URL\" reset"
+    "db:up": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" up'",
+    "db:down": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" down'",
+    "db:status": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" status'",
+    "db:reset": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" reset'"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.5",
