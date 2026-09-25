@@ -1,0 +1,41 @@
+services:
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    env_file:
+      - .env
+
+    environment:
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: ${DOCKER_POSTGRES_URL}
+
+    volumes:
+      # Development-only Ed25519 key storage.
+      # Do NOT commit this directory.
+      - ./secrets:/app/secrets:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - gridx-infra-network
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    restart: unless-stopped
