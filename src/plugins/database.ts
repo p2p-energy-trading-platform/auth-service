@@ -18,7 +18,7 @@ export default fp(async (fastify) => {
     throw error;
   }
 
-  fastify.decorate('sql', sql);
+  fastify.decorate('db', sql);
 
   fastify.addHook('onClose', async () => {
     await sql.end({ timeout: 5 });
