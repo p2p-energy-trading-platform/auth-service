@@ -12,12 +12,19 @@
     "lint:fix": "oxlint -D correctness -D suspicious --vitest-plugin --fix src test",
     "format": "oxfmt --write src test",
     "format:check": "oxfmt --check src test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "check-config": "tsx scripts/check-config.ts",
     "db:create": "goose -dir migrations create",
     "db:up": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" up'",
     "db:down": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" down'",
     "db:status": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" status'",
-    "db:reset": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" reset'"
+    "db:reset": "dotenv -- sh -c 'goose -dir migrations postgres \"$DATABASE_URL\" reset'",
+    "keys:generate": "node scripts/generate-dev-keys.mjs",
+    "predev": "npm run keys:generate",
+    "pretest": "npm run keys:generate"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.5",
