@@ -1,12 +1,13 @@
 import fp from 'fastify-plugin';
-import postgres from 'postgres';
+import { createDbClient } from '../infrastructure/database/client.js';
 
 export default fp(async (fastify) => {
-  const sql = postgres(fastify.config.DATABASE_URL, {
+  const sql = createDbClient({
+    databaseUrl: fastify.config.DATABASE_URL,
     max: 10,
-    idle_timeout: 30, // seconds
-    connect_timeout: 5, // seconds
-    onnotice: (notice) => fastify.log.debug({ notice }, 'PostgreSQL notice'),
+    idleTimeout: 30, // seconds
+    connectTimeout: 5, // seconds
+    onNotice: (notice) => fastify.log.debug({ notice }, 'PostgreSQL notice'),
   });
 
   // Test the database connection on startup
