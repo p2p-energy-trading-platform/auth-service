@@ -1,13 +1,12 @@
 import fp from 'fastify-plugin';
-import { createClient } from 'redis';
+import { createRedisClient } from '../infrastructure/redis/client.js';
 
 export default fp(async (fastify) => {
-  const client = createClient({
+  const client = createRedisClient({
     url: fastify.config.REDIS_URL,
-  });
-
-  client.on('error', (error) => {
-    fastify.log.error({ err: error }, 'Redis client error');
+    onError: (error) => {
+      fastify.log.error({ err: error }, 'Redis client error');
+    },
   });
 
   await client.connect();
