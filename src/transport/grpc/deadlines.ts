@@ -1,7 +1,5 @@
-import * as grpc from '@grpc/grpc-js';
+import type { HandlerContext } from '@connectrpc/connect';
 
-export function remainingDeadlineMs(deadline: grpc.Deadline): number {
-  const deadlineMs = deadline instanceof Date ? deadline.getTime() : Number(deadline);
-
-  return Math.max(0, deadlineMs - Date.now());
+export function remainingDeadlineMs(context: HandlerContext): number | undefined {
+  return context.timeoutMs();
 }

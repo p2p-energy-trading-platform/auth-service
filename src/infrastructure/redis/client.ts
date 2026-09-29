@@ -1,4 +1,6 @@
-import { createClient } from 'redis';
+import { createClient, type RedisClientType } from 'redis';
+
+export type RedisClient = RedisClientType;
 
 interface RedisClientOptions {
   url: string;

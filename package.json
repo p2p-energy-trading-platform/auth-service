@@ -27,8 +27,10 @@
     "pretest": "npm run keys:generate"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.14.5",
-    "@p2p-energy-trading-platform/typescript-sdk": "github:p2p-energy-trading-platform/typescript-sdk#v1.1.1",
+    "@bufbuild/protobuf": "^2.15.0",
+    "@connectrpc/connect": "^2.2.0",
+    "@connectrpc/connect-node": "^2.2.0",
+    "@p2p-energy-trading-platform/typescript-sdk": "github:p2p-energy-trading-platform/typescript-sdk#v1.2.1",
     "@prometheus-io/client": "^0.16.1",
     "argon2": "^0.45.1",
     "dotenv": "^18.0.3",
@@ -41,6 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
+    "@vitest/coverage-v8": "^5.0.1",
     "dotenv-cli": "^11.0.0",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
@@ -51,6 +54,7 @@
   "allowScripts": {
     "argon2@0.45.1": true,
     "esbuild@0.28.2": true,
-    "protobufjs@7.6.6": true
+    "protobufjs@7.6.6": true,
+    "@p2p-energy-trading-platform/typescript-sdk": true
   }
 }

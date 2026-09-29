@@ -1,6 +1,4 @@
-import * as grpc from '@grpc/grpc-js';
-
-export const authorizationServiceImplementation: grpc.UntypedServiceImplementation = {
+export const authorizationServiceImplementation = {
   // GetUser: unimplemented,
   // CheckPermission: unimplemented,
 };
