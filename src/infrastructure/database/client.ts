@@ -1,5 +1,7 @@
 import postgres from 'postgres';
 
+export type DbClient = postgres.Sql;
+
 interface DbClientOptions {
   databaseUrl: string;
   max: number;

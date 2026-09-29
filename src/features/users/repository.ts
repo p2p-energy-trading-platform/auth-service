@@ -1,0 +1,54 @@
+import { AppError } from '../../errors/app-error.js';
+import { ErrorCodes } from '../../errors/codes.js';
+import type { DbClient } from '../../infrastructure/database/client.js';
+
+interface CreateUserParams {
+  email: string;
+  passwordHash: string;
+}
+
+export interface RegisteredUser {
+  id: string;
+  email: string;
+  status: string;
+  createdAt: string;
+}
+
+export class UserRepository {
+  constructor(private readonly db: DbClient) {}
+
+  async findByEmail(email: string): Promise<{ id: string } | null> {
+    const [user] = await this.db<{ id: string }[]>`
+            SELECT id FROM users WHERE LOWER(email) = LOWER(${email});       
+        `;
+
+    return user || null;
+  }
+
+  async createUsersWithCredentials(params: CreateUserParams): Promise<RegisteredUser> {
+    const [newUser] = await this.db<RegisteredUser[]>`
+            WITH new_user AS (
+                INSERT INTO users (email, status)
+                VALUES (${params.email}, 'PENDING')
+                RETURNING id, email, status, created_at AS "createdAt"
+            ),
+            new_credentials AS (
+                INSERT INTO credentials (user_id, password_hash)
+                SELECT id, ${params.passwordHash} FROM new_user
+            ),
+            new_role AS (
+                INSERT INTO user_roles (user_id, role_id)
+                SELECT new_user.id, roles.id 
+                FROM new_user, roles 
+                WHERE roles.name = 'user'
+            )
+            SELECT * FROM new_user;
+        `;
+
+    if (!newUser) {
+      throw new AppError(ErrorCodes.INTERNAL, 'Failed to create user record.');
+    }
+
+    return newUser;
+  }
+}
