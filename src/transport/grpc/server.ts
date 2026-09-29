@@ -1,43 +1,22 @@
-import * as grpc from '@grpc/grpc-js';
+import { createTlsOptions } from './credentials.js';
+import * as http2 from 'node:http2';
+import { connectNodeAdapter } from '@connectrpc/connect-node';
 
-import { createServerCredentials } from './credentials.js';
-// import {
-//   authServiceImplementation,
-// } from "./services/auth-service.js";
-// import {
-//   authorizationServiceImplementation,
-// } from "./services/authorization-service.js";
-
-/*
- * Import rpc from typescript sdk
- */
-// import {
-//   AuthServiceService,
-//   AuthorizationServiceService,
-// } from "@gridx/protobuf/grpc";
-// import {
 import type { AppConfig } from '../../config/types.js';
-
-// } from "@p2p-energy-trading-platform/typescript-sdk"
+import type { ConnectRouter } from '@connectrpc/connect';
 
 export class GrpcServer {
   private config: AppConfig;
-  private readonly server: grpc.Server;
+  private server?: http2.Http2Server | http2.Http2SecureServer;
   private started = false;
 
   constructor(config: AppConfig) {
-    this.server = new grpc.Server();
     this.config = config;
+  }
 
-    // this.server.addService(
-    //   AuthServiceService,
-    //   authServiceImplementation,
-    // );
-
-    // this.server.addService(
-    //   AuthorizationServiceService,
-    //   authorizationServiceImplementation,
-    // );
+  private registerRoutes(_: ConnectRouter): void {
+    // Inject dependencies into your service factory here
+    // router.service(AuthService, createAuthServiceImplementation(deps));
   }
 
   async start(): Promise<void> {
@@ -45,32 +24,40 @@ export class GrpcServer {
       return;
     }
 
-    const address = `${this.config.GRPC_HOST}:${this.config.GRPC_PORT}`;
+    const handler = connectNodeAdapter({
+      routes: (router) => this.registerRoutes(router),
+    })
 
-    const credentials = createServerCredentials(this.config);
+    const tlsOptions = createTlsOptions(this.config);
+
+    if (tlsOptions) {
+      this.server = http2.createSecureServer(tlsOptions, handler);
+    } else {
+      this.server = http2.createServer(handler);
+    }
+
+    const host = this.config.GRPC_HOST;
+    const port = this.config.GRPC_PORT;
+
 
     await new Promise<void>((resolve, reject) => {
-      this.server.bindAsync(address, credentials, (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        this.server.start();
+      this.server?.listen(port, host, () => {
         this.started = true;
 
         resolve();
       });
+
+      this.server?.once('error', reject);
     });
   }
 
   async stop(): Promise<void> {
-    if (!this.started) {
+    if (!this.started || !this.server) {
       return;
     }
 
     await new Promise<void>((resolve) => {
-      this.server.tryShutdown(() => {
+      this.server?.close(() => {
         this.started = false;
         resolve();
       });

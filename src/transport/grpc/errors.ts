@@ -1,48 +1,44 @@
-import * as grpc from '@grpc/grpc-js';
-
+import { Code, ConnectError } from '@connectrpc/connect';
 import { AppError } from '../../errors/app-error.js';
 import { ErrorCodes } from '../../errors/codes.js';
 
-export function toGrpcError(error: unknown): grpc.ServiceError {
+export function toGrpcError(error: unknown): ConnectError {
   if (error instanceof AppError) {
     const status = mapStatus(error.code);
-
-    return Object.assign(new Error(error.message), {
-      code: status,
-      details: error.message,
-    }) as grpc.ServiceError;
+    return new ConnectError(error.message, status);
   }
 
-  return Object.assign(new Error('Internal server error'), {
-    code: grpc.status.INTERNAL,
-    details: 'Internal server error',
-  }) as grpc.ServiceError;
+  if (error instanceof ConnectError) {
+    return error;
+  }
+
+  return new ConnectError("Internal Server Error", Code.Internal);
 }
 
-function mapStatus(code: AppError['code']): grpc.status {
+function mapStatus(code: AppError['code']): Code {
   switch (code) {
     case ErrorCodes.INVALID_ARGUMENT:
-      return grpc.status.INVALID_ARGUMENT;
+      return Code.InvalidArgument;
 
     case ErrorCodes.UNAUTHENTICATED:
-      return grpc.status.UNAUTHENTICATED;
+      return Code.Unauthenticated;
 
     case ErrorCodes.FORBIDDEN:
-      return grpc.status.PERMISSION_DENIED;
+      return Code.PermissionDenied;
 
     case ErrorCodes.NOT_FOUND:
-      return grpc.status.NOT_FOUND;
+      return Code.NotFound;
 
     case ErrorCodes.CONFLICT:
-      return grpc.status.ALREADY_EXISTS;
+      return Code.AlreadyExists;
 
     case ErrorCodes.RATE_LIMITED:
-      return grpc.status.RESOURCE_EXHAUSTED;
+      return Code.ResourceExhausted;
 
     case ErrorCodes.NOT_IMPLEMENTED:
-      return grpc.status.UNIMPLEMENTED;
+      return Code.Unimplemented;
 
     default:
-      return grpc.status.INTERNAL;
+      return Code.Internal;
   }
 }
