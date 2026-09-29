@@ -12,7 +12,7 @@ export function toGrpcError(error: unknown): ConnectError {
     return error;
   }
 
-  return new ConnectError("Internal Server Error", Code.Internal);
+  return new ConnectError('Internal Server Error', Code.Internal);
 }
 
 function mapStatus(code: AppError['code']): Code {

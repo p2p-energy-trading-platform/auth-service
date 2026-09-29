@@ -32,5 +32,5 @@ export function createTlsOptions(config: AppConfig): SecureServerOptions | null 
     ca: rootCerts,
     requestCert: config.GRPC_TLS_REQUIRE_CLIENT_CERT,
     rejectUnauthorized: config.GRPC_TLS_REQUIRE_CLIENT_CERT,
-  }
+  };
 }
