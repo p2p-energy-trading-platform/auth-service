@@ -433,6 +433,36 @@ npx vitest run
 npm run build
 ```
 
+**NOTE**: Since our typescript-sdk is installed as github dependency there are minor quirks with how npm will install and handle the `package-lock.json` file. So after updating the version number in `package.json`, running `npm i` or `npm ci` and if the package did not get updated in `node_modules`, try the following:
+
+1. Try running the following command to force refresh the package-lock.json (but only focus on the sdk not the entire dependency tree):
+
+```bash
+npm install @p2p-energy-trading-platform/typescript-sdk@github:p2p-energy-trading-platform/typescript-sdk#<package-number> --package-lock-only --force
+```
+
+Here package number means the version. Example command (installs 1.3.0):
+
+```bash
+npm install @p2p-energy-trading-platform/typescript-sdk@github:p2p-energy-trading-platform/typescript-sdk#v1.3.0 --package-lock-only --force
+```
+
+2. If the above still did not fix your issue, try the following:
+
+```bash
+rm -rf node_modules/
+```
+
+```bash
+npm install
+```
+Or
+```bash
+npm ci
+```
+
+Also sometimes the typescript language server must be restarted in whatever IDE you are using! The code will work but IDE can still report a stale error!!
+
 Do this before submitting substantial Auth Service changes.
 
 ## 11. Formatting and linting
