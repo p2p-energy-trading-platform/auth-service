@@ -7,6 +7,7 @@ import { PasswordHasher } from '../infrastructure/crypto/password-hasher.js';
 import { RegisterUseCase } from '../features/authentication/register.js';
 import { LoginUseCase } from '../features/authentication/login.js';
 import { LogoutUseCase } from '../features/authentication/logout.js';
+import { LogoutAllUseCase } from '../features/authentication/logout-all.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
@@ -25,12 +26,14 @@ export default fp(async (fastify) => {
   );
 
   const logoutUseCase = new LogoutUseCase(sessionRepository);
+  const logoutAllUseCase = new LogoutAllUseCase(sessionRepository);
 
   const grpcServer = new GrpcServer({
     config: fastify.config,
     registerUseCase,
     loginUseCase,
     logoutUseCase,
+    logoutAllUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);
