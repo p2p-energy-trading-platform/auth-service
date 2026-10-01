@@ -60,13 +60,9 @@ export class SessionRepository {
 
     // Cache only after the database write succeeds.
     try {
-      await this.redis.set(
-        this.getCacheKey(params.refreshTokenHash),
-        JSON.stringify(session),
-        {
-          EX: this.getTtlSeconds(session.expiresAt),
-        },
-      );
+      await this.redis.set(this.getCacheKey(params.refreshTokenHash), JSON.stringify(session), {
+        EX: this.getTtlSeconds(session.expiresAt),
+      });
     } catch {
       // Redis is a cache, so a cache failure must not invalidate
       // an otherwise successful database-backed login.
@@ -75,9 +71,7 @@ export class SessionRepository {
     return session;
   }
 
-  async findActiveByRefreshTokenHash(
-    refreshTokenHash: string,
-  ): Promise<Session | null> {
+  async findActiveByRefreshTokenHash(refreshTokenHash: string): Promise<Session | null> {
     const cacheKey = this.getCacheKey(refreshTokenHash);
 
     // Fast path: Redis.
@@ -89,10 +83,7 @@ export class SessionRepository {
 
         // Redis is not the source of truth. Do not return an
         // obviously expired cached session.
-        if (
-          session.revokedAt === null &&
-          new Date(session.expiresAt).getTime() > Date.now()
-        ) {
+        if (session.revokedAt === null && new Date(session.expiresAt).getTime() > Date.now()) {
           return session;
         }
 
@@ -122,13 +113,9 @@ export class SessionRepository {
 
     // Repopulate Redis after a cache miss.
     try {
-      await this.redis.set(
-        cacheKey,
-        JSON.stringify(session),
-        {
-          EX: this.getTtlSeconds(session.expiresAt),
-        },
-      );
+      await this.redis.set(cacheKey, JSON.stringify(session), {
+        EX: this.getTtlSeconds(session.expiresAt),
+      });
     } catch {
       // Database lookup succeeded; cache failure should not affect
       // the result.
