@@ -10,7 +10,7 @@ import { LogoutUseCase } from '../features/authentication/logout.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
-  const sessionRepository = new SessionRepository(fastify.db);
+  const sessionRepository = new SessionRepository(fastify.db, fastify.redis);
   const passwordHasher = new PasswordHasher();
 
   const registerUseCase = new RegisterUseCase(userRepository, passwordHasher);

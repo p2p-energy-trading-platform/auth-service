@@ -1,4 +1,5 @@
 import type { DbClient } from '../../infrastructure/database/client.js';
+import type { RedisClient } from '../../infrastructure/redis/client.js';
 
 interface CreateSessionParams {
   userId: string;
@@ -15,9 +16,25 @@ export interface Session {
 }
 
 export class SessionRepository {
-  constructor(private readonly db: DbClient) {}
+  private static readonly CACHE_PREFIX = 'session:';
+
+  constructor(
+    private readonly db: DbClient,
+    private readonly redis: RedisClient,
+  ) {}
+
+  private getCacheKey(refreshTokenHash: string): string {
+    return `${SessionRepository.CACHE_PREFIX}${refreshTokenHash}`;
+  }
+
+  private getTtlSeconds(expiresAt: string | Date): number {
+    const remainingMs = new Date(expiresAt).getTime() - Date.now();
+
+    return Math.max(1, Math.ceil(remainingMs / 1000));
+  }
 
   async create(params: CreateSessionParams): Promise<Session> {
+    // PostgreSQL remains the source of truth.
     const [session] = await this.db<Session[]>`
       INSERT INTO sessions (
         user_id,
@@ -41,10 +58,51 @@ export class SessionRepository {
       throw new Error('Failed to create session');
     }
 
+    // Cache only after the database write succeeds.
+    try {
+      await this.redis.set(
+        this.getCacheKey(params.refreshTokenHash),
+        JSON.stringify(session),
+        {
+          EX: this.getTtlSeconds(session.expiresAt),
+        },
+      );
+    } catch {
+      // Redis is a cache, so a cache failure must not invalidate
+      // an otherwise successful database-backed login.
+    }
+
     return session;
   }
 
-  async findActiveByRefreshTokenHash(refreshTokenHash: string): Promise<Session | null> {
+  async findActiveByRefreshTokenHash(
+    refreshTokenHash: string,
+  ): Promise<Session | null> {
+    const cacheKey = this.getCacheKey(refreshTokenHash);
+
+    // Fast path: Redis.
+    try {
+      const cached = await this.redis.get(cacheKey);
+
+      if (cached) {
+        const session = JSON.parse(cached) as Session;
+
+        // Redis is not the source of truth. Do not return an
+        // obviously expired cached session.
+        if (
+          session.revokedAt === null &&
+          new Date(session.expiresAt).getTime() > Date.now()
+        ) {
+          return session;
+        }
+
+        await this.redis.del(cacheKey);
+      }
+    } catch {
+      // Fall through to PostgreSQL.
+    }
+
+    // PostgreSQL remains the authoritative source.
     const [session] = await this.db<Session[]>`
       SELECT
         id,
@@ -58,16 +116,42 @@ export class SessionRepository {
         AND expires_at > CURRENT_TIMESTAMP;
     `;
 
-    return session ?? null;
+    if (!session) {
+      return null;
+    }
+
+    // Repopulate Redis after a cache miss.
+    try {
+      await this.redis.set(
+        cacheKey,
+        JSON.stringify(session),
+        {
+          EX: this.getTtlSeconds(session.expiresAt),
+        },
+      );
+    } catch {
+      // Database lookup succeeded; cache failure should not affect
+      // the result.
+    }
+
+    return session;
   }
 
   async revokeByRefreshTokenHash(refreshTokenHash: string): Promise<boolean> {
+    // Database first: source of truth.
     const result = await this.db`
       UPDATE sessions
       SET revoked_at = CURRENT_TIMESTAMP
       WHERE refresh_token_hash = ${refreshTokenHash}
         AND revoked_at IS NULL;
     `;
+
+    // Remove the cached session after the database is updated.
+    try {
+      await this.redis.del(this.getCacheKey(refreshTokenHash));
+    } catch {
+      // The database remains authoritative even if cache deletion fails.
+    }
 
     return result.count > 0;
   }
