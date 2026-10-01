@@ -82,10 +82,7 @@ export function createAuthServiceImplementation(
         const userId = context.requestHeader.get('x-gridx-user-id');
 
         if (!userId) {
-          throw new AppError(
-            ErrorCodes.UNAUTHENTICATED,
-            'Authenticated user is required',
-          );
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
         }
 
         const result = await deps.logoutAllUseCase.execute({

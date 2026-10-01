@@ -150,9 +150,7 @@ export class SessionRepository {
 
     // Remove all cached sessions after the database is updated.
     try {
-      const cacheKeys = sessions.map((session) =>
-        sessionCacheKey(session.refreshTokenHash),
-      );
+      const cacheKeys = sessions.map((session) => sessionCacheKey(session.refreshTokenHash));
 
       if (cacheKeys.length > 0) {
         await this.redis.del(cacheKeys);

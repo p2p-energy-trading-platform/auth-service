@@ -15,10 +15,7 @@ export class LogoutAllUseCase {
 
   async execute(input: LogoutAllInput): Promise<LogoutAllResult> {
     if (!input.userId) {
-      throw new AppError(
-        ErrorCodes.UNAUTHENTICATED,
-        'Authenticated user is required',
-      );
+      throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
     }
 
     await this.sessionRepo.revokeAllByUserId(input.userId);
