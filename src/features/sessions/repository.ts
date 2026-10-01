@@ -1,5 +1,6 @@
 import type { DbClient } from '../../infrastructure/database/client.js';
 import type { RedisClient } from '../../infrastructure/redis/client.js';
+import { sessionCacheKey } from '../../infrastructure/redis/keys.js';
 
 interface CreateSessionParams {
   userId: string;
@@ -16,16 +17,10 @@ export interface Session {
 }
 
 export class SessionRepository {
-  private static readonly CACHE_PREFIX = 'session:';
-
   constructor(
     private readonly db: DbClient,
     private readonly redis: RedisClient,
   ) {}
-
-  private getCacheKey(refreshTokenHash: string): string {
-    return `${SessionRepository.CACHE_PREFIX}${refreshTokenHash}`;
-  }
 
   private getTtlSeconds(expiresAt: string | Date): number {
     const remainingMs = new Date(expiresAt).getTime() - Date.now();
@@ -60,7 +55,7 @@ export class SessionRepository {
 
     // Cache only after the database write succeeds.
     try {
-      await this.redis.set(this.getCacheKey(params.refreshTokenHash), JSON.stringify(session), {
+      await this.redis.set(sessionCacheKey(params.refreshTokenHash), JSON.stringify(session), {
         EX: this.getTtlSeconds(session.expiresAt),
       });
     } catch {
@@ -72,7 +67,7 @@ export class SessionRepository {
   }
 
   async findActiveByRefreshTokenHash(refreshTokenHash: string): Promise<Session | null> {
-    const cacheKey = this.getCacheKey(refreshTokenHash);
+    const cacheKey = sessionCacheKey(refreshTokenHash);
 
     // Fast path: Redis.
     try {
@@ -135,7 +130,7 @@ export class SessionRepository {
 
     // Remove the cached session after the database is updated.
     try {
-      await this.redis.del(this.getCacheKey(refreshTokenHash));
+      await this.redis.del(sessionCacheKey(refreshTokenHash));
     } catch {
       // The database remains authoritative even if cache deletion fails.
     }
