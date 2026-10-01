@@ -21,6 +21,12 @@ export interface RefreshOutput {
 }
 
 
+interface GeneratedRefreshToken {
+    token: string;
+    hash: string;
+}
+
+
 export class RefreshUseCase {
 
     constructor(
@@ -34,7 +40,6 @@ export class RefreshUseCase {
     ){
 
     }
-
 
     async execute(input: RefreshInput): Promise<RefreshOutput> {
 
@@ -60,14 +65,43 @@ export class RefreshUseCase {
             throw new AppError(ErrorCodes.UNAUTHENTICATED, 'User is not active');
         }
 
+
+        //access token
         const accessToken = await this.jwtSigner.signAccessToken({
             sub: user.id,
             roles: user.roles,
         });
 
-        const newRefreshToken = randomBytes(32).toString('base64url')
 
-        const newRefreshTokenHash = hashOpaqueToken(newRefreshToken);
+
+        //refresh token
+        const { token: newRefreshToken, hash: newRefreshTokenHash } = this.generateRefreshToken();
+
+        const expiresAt = new Date(Date.now() + this.refreshTokenTtlSeconds * 1000);
+
+
+        await this.sessionRepo.revokeByRefreshTokenHash(refreshTokenHash);
+
+        await this.sessionRepo.create({
+            userId: user.id,
+            refreshTokenHash: newRefreshTokenHash,
+            expiresAt,
+        });
+        
+        return {
+            accessToken,
+            refreshToken: newRefreshToken,
+            expiresIn: this.accessTokenTtlSeconds,
+        };
+
+    }
+
+    private generateRefreshToken(): GeneratedRefreshToken {
+
+        const token = randomBytes(32).toString('base64url');
+        const hash = hashOpaqueToken(token);
+
+        return {token, hash};
 
     }
 
