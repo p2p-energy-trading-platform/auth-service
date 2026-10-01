@@ -14,6 +14,14 @@ export interface RegisteredUser {
   createdAt: string;
 }
 
+export interface AuthenticatedUser {
+  id: string;
+  email: string;
+  status: string;
+  passwordHash: string;
+  roles: string[];
+}
+
 export class UserRepository {
   constructor(private readonly db: DbClient) {}
 
@@ -23,6 +31,28 @@ export class UserRepository {
         `;
 
     return user || null;
+  }
+
+  async findByEmailWithCredentials(email: string): Promise<AuthenticatedUser | null> {
+    const [user] = await this.db<AuthenticatedUser[]>`
+      SELECT
+        u.id,
+        u.email,
+        u.status,
+        c.password_hash AS "passwordHash",
+        COALESCE(
+          array_agg(r.name) FILTER (WHERE r.name IS NOT NULL),
+          '{}'
+        ) AS roles
+      FROM users u
+      INNER JOIN credentials c ON c.user_id = u.id
+      LEFT JOIN user_roles ur ON ur.user_id = u.id
+      LEFT JOIN roles r ON r.id = ur.role_id
+      WHERE LOWER(u.email) = LOWER(${email})
+      GROUP BY u.id, u.email, u.status, c.password_hash;
+    `;
+
+    return user ?? null;
   }
 
   async createUsersWithCredentials(params: CreateUserParams): Promise<RegisteredUser> {

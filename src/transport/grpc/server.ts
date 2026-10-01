@@ -7,10 +7,14 @@ import type { ConnectRouter } from '@connectrpc/connect';
 import { AuthService } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { createAuthServiceImplementation } from './services/auth-service.js';
 import { RegisterUseCase } from '../../features/authentication/register.js';
+import { LoginUseCase } from '../../features/authentication/login.js';
+import { LogoutUseCase } from '../../features/authentication/logout.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
   registerUseCase: RegisterUseCase;
+  loginUseCase: LoginUseCase;
+  logoutUseCase: LogoutUseCase;
 }
 
 export class GrpcServer {
@@ -25,11 +29,13 @@ export class GrpcServer {
   }
 
   private registerRoutes(router: ConnectRouter): void {
-    // Inject dependencies into  service factory here
+    // Inject dependencies into the service implementation.
     router.service(
       AuthService,
       createAuthServiceImplementation({
         registerUseCase: this.deps.registerUseCase,
+        loginUseCase: this.deps.loginUseCase,
+        logoutUseCase: this.deps.logoutUseCase,
       }),
     );
   }
