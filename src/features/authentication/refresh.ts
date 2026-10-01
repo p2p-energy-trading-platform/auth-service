@@ -42,6 +42,33 @@ export class RefreshUseCase {
             throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Refresh token is required');
         }
 
+        const refreshTokenHash = hashOpaqueToken(input.refreshToken);
+
+        const session = await this.sessionRepo.findActiveByRefreshTokenHash(refreshTokenHash);
+
+        if(!session){
+            throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Invalid refresh token');
+        }
+
+        const user = await this.userRepo.findByIdWithRoles(session.userId);
+
+        if(!user){
+            throw new AppError(ErrorCodes.UNAUTHENTICATED, 'User not found');
+        }        
+
+        if(user.status !== 'ACTIVE'){
+            throw new AppError(ErrorCodes.UNAUTHENTICATED, 'User is not active');
+        }
+
+        const accessToken = await this.jwtSigner.signAccessToken({
+            sub: user.id,
+            roles: user.roles,
+        });
+
+        const newRefreshToken = randomBytes(32).toString('base64url')
+
+        const newRefreshTokenHash = hashOpaqueToken(newRefreshToken);
+
     }
 
 }
