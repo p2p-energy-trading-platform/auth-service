@@ -81,4 +81,34 @@ export class UserRepository {
 
     return newUser;
   }
+
+  async findByIdWithRoles(userId: string): Promise<AuthenticatedUser | null> {
+
+    const [user] = await this.db<AuthenticatedUser[]>`
+
+      SELECT u.id, 
+             u.email, 
+             u.status,
+             c.password_hash AS "passwordHash",
+             COALESCE(
+               array_agg(r.name) FILTER (WHERE r.name IS NOT NULL),
+               '{}'
+             ) AS roles
+             FROM users u
+             INNER JOIN credentials c ON c.user_id = u.id
+             LEFT JOIN user_roles ur ON ur.user_id = u.id
+             LEFT JOIN roles r ON r.id = ur.role_id
+             WHERE u.id = ${userId}
+             GROUP BY u.id, u.email, u.status, c.password_hash;
+
+    `
+
+    if (!user) {
+      throw new AppError(ErrorCodes.NOT_FOUND, 'User not found.');
+    }
+
+    return user ?? null;
+
+  }
+
 }
