@@ -19,3 +19,29 @@ export interface RefreshOutput {
     refreshToken: string;
     expiresIn: number;
 }
+
+
+export class RefreshUseCase {
+
+    constructor(
+
+        private readonly userRepo: UserRepository,
+        private readonly jwtSigner:  JwtSigner,
+        private readonly sessionRepo: SessionRepository,
+        private readonly accessTokenTtlSeconds: number,
+        private readonly refreshTokenTtlSeconds: number
+
+    ){
+
+    }
+
+
+    async execute(input: RefreshInput): Promise<RefreshOutput> {
+
+        if(!input.refreshToken){
+            throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Refresh token is required');
+        }
+
+    }
+
+}
