@@ -14,7 +14,7 @@ export class AuthorizationRepository {
             SELECT r.name
             FROM user_roles ur
             INNER JOIN roles r ON r.id = ur.role_id
-            WHERE ur.user.id = ${userId}
+            WHERE ur.user_id = ${userId}
         
         `;
 
@@ -23,4 +23,23 @@ export class AuthorizationRepository {
     }
 
 
+    async hasPermission(userId: string, permissionName: string): Promise<boolean> {
+
+        const rows = await this.db<{ exists: boolean}[]>`
+        
+            SELECT EXISTS (
+                SELECT 1
+                FROM user_roles ur
+                INNER JOIN role_permissions rp ON rp.role_id = ur.role_id
+                INNER JOIN permissions p ON p.id = rp.permission_id
+                WHERE ur.user_id = ${userId}
+                AND p.name = ${permissionName}
+            ) AS exists
+        
+        `;
+
+        return rows[0]?.exists ?? false;
+
+    }    
+ 
 }
