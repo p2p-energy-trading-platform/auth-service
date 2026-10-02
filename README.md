@@ -1,6 +1,7 @@
 # Auth Service
 
-The **GridX Auth Service** is the identity and authentication service for the P2P Energy Trading Platform.
+The **GridX Auth Service** is the identity and authentication service for the
+P2P Energy Trading Platform.
 
 It is responsible for:
 
@@ -45,9 +46,11 @@ It is responsible for:
                          └──────────────────────┘
 ```
 
-The API Gateway communicates with Auth Service over gRPC and retrieves JWKS over the internal network.
+The API Gateway communicates with Auth Service over gRPC and retrieves JWKS
+over the internal network.
 
-NOTE: The Gateway verifies access-token signatures locally. It does **not** send every incoming request to Auth Service just to verify a JWT.
+NOTE: The Gateway verifies access-token signatures locally. It does **not** send
+every incoming request to Auth Service just to verify a JWT.
 
 ## 2. Repository structure
 
@@ -187,7 +190,8 @@ auth-service/
 └── README.md
 ```
 
-The exact folder contents can grow as implementation continues. New code should preserve the existing separation:
+The exact folder contents can grow as implementation continues. New code should
+preserve the existing separation:
 
 - `features/` contains business/application logic.
 - `transport/` contains gRPC/HTTP transport concerns.
@@ -208,11 +212,14 @@ Install these before starting development:
 - Docker Engine
 - Docker Compose
 - `goose` for local database migration commands
-- `gridx-workspace` setup (configure the gridx-workspace repo before running the project)
+- `gridx-workspace` setup (configure the gridx-workspace repo before running
+  the project)
 
 ## 4. Clone and install
 
-Make sure the gridx-workspace is set up with latest changes from main branch and all repos have been pulled locally. If you want to pull all latest changes or missing repos, run the following from `gridx-workspace`.
+Make sure the gridx-workspace is set up with latest changes from main branch
+and all repos have been pulled locally. If you want to pull all latest changes
+or missing repos, run the following from `gridx-workspace`.
 
 ```bash
 go-task setup
@@ -265,13 +272,17 @@ Create your local environment file:
 cp .env.example .env
 ```
 
-Review every value before starting the service. You must first check that the postgres url for both localhost and docker container are correct. `DATABASE_URL` is used during localhost execution and `DOCKER_POSTGRES_URL` is used during execution inside docker environment.
+Review every value before starting the service. You must first check that the
+postgres url for both localhost and docker container are correct.
+`DATABASE_URL` is used during localhost execution and `DOCKER_POSTGRES_URL` is
+used during execution inside docker environment.
 
 ## 7. Running the project
 
 To run the project, you can run the following commands.
 
-In `gridx-workspace` directory, run the following to start the entire project along with auth-service.
+In `gridx-workspace` directory, run the following to start the entire project
+along with auth-service.
 
 ```bash
 go-task up
@@ -283,7 +294,8 @@ or
 task up
 ```
 
-To rebuild the `auth-service` only while it is still running in docker, you can use the following command:
+To rebuild the `auth-service` only while it is still running in docker, you can
+use the following command:
 
 ```bash
 go-task build -- auth-service
@@ -295,7 +307,11 @@ or
 task build -- auth-service
 ```
 
-You can also run the project locally but make sure it is not running as a docker container under `gridx-workspace` directory (there can be some unintended side effects or race conditions - unsure but technically it should work as expected). You can run the project locally by running the following commands
+You can also run the project locally but make sure it is not running as a
+docker container under `gridx-workspace` directory (there can be some
+unintended side effects or race conditions - unsure but technically it should
+work as expected). You can run the project locally by running the following
+commands
 
 ```bash
 npm run build
@@ -313,11 +329,14 @@ The migration directory is the repository-root `migrations/` directory:
 migrations/
 ```
 
-The project uses Goose for schema migrations. Keep Goose migrations in this migrations directory.
+The project uses Goose for schema migrations. Keep Goose migrations in this
+migrations directory.
 
 ### Create a migration
 
-**NOTE**: Atleast the `gridx-infra` containers must be running or the following commands will throw an error. I recommend having the whole `gridx-workspace` containers running! 
+**NOTE**: Atleast the `gridx-infra` containers must be running or the following
+commands will throw an error. I recommend having the whole `gridx-workspace`
+containers running!
 
 The script is:
 
@@ -359,7 +378,8 @@ npm run db:down
 npm run db:reset
 ```
 
-Use `db:reset` only when you want to reset everything and start clean. But changing existing migration files must be discussed with the team.
+Use `db:reset` only when you want to reset everything and start clean. But
+changing existing migration files must be discussed with the team.
 
 ## 9. Database workflow for new developers
 
@@ -382,7 +402,8 @@ When creating schema changes:
 7. Commit the migration with the feature
 ```
 
-Do not manually edit an already-applied migration to change the schema history. Create a new migration instead.
+Do not manually edit an already-applied migration to change the schema history.
+Create a new migration instead.
 
 ## 10. Development checks before opening a PR
 
@@ -433,21 +454,30 @@ npx vitest run
 npm run build
 ```
 
-**NOTE**: Since our typescript-sdk is installed as github dependency there are minor quirks with how npm will install and handle the `package-lock.json` file. So after updating the version number in `package.json`, running `npm i` or `npm ci` and if the package did not get updated in `node_modules`, try the following:
+**NOTE**: Since our typescript-sdk is installed as github dependency there are
+minor quirks with how npm will install and handle the `package-lock.json` file.
+So after updating the version number in `package.json`, running `npm i` or
+`npm ci` and if the package did not get updated in `node_modules`, try the
+following:
 
-1. Try running the following command to force refresh the package-lock.json (but only focus on the sdk not the entire dependency tree):
+1. Try running the following command to force refresh the package-lock.json
+   (but only focus on the sdk not the entire dependency tree):
 
 ```bash
-npm install @p2p-energy-trading-platform/typescript-sdk@github:p2p-energy-trading-platform/typescript-sdk#<package-number> --package-lock-only --force
+SDK='@p2p-energy-trading-platform/typescript-sdk@github:p2p-'
+SDK+='energy-trading-platform/typescript-sdk#<package-number>'
+npm install "$SDK" --package-lock-only --force
 ```
 
 Here package number means the version. Example command (installs 1.3.0):
 
 ```bash
-npm install @p2p-energy-trading-platform/typescript-sdk@github:p2p-energy-trading-platform/typescript-sdk#v1.3.0 --package-lock-only --force
+SDK='@p2p-energy-trading-platform/typescript-sdk@github:p2p-'
+SDK+='energy-trading-platform/typescript-sdk#v1.3.0'
+npm install "$SDK" --package-lock-only --force
 ```
 
-2. If the above still did not fix your issue, try the following:
+1. If the above still did not fix your issue, try the following:
 
 ```bash
 rm -rf node_modules/
@@ -456,12 +486,15 @@ rm -rf node_modules/
 ```bash
 npm install
 ```
+
 Or
+
 ```bash
 npm ci
 ```
 
-Also sometimes the typescript language server must be restarted in whatever IDE you are using! The code will work but IDE can still report a stale error!!
+Also sometimes the typescript language server must be restarted in whatever IDE
+you are using! The code will work but IDE can still report a stale error!!
 
 Do this before submitting substantial Auth Service changes.
 
