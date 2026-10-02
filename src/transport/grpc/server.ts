@@ -9,12 +9,14 @@ import { createAuthServiceImplementation } from './services/auth-service.js';
 import { RegisterUseCase } from '../../features/authentication/register.js';
 import { LoginUseCase } from '../../features/authentication/login.js';
 import { LogoutUseCase } from '../../features/authentication/logout.js';
+import { LogoutAllUseCase } from '../../features/authentication/logout-all.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
   registerUseCase: RegisterUseCase;
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
+  logoutAllUseCase: LogoutAllUseCase;
 }
 
 export class GrpcServer {
@@ -36,6 +38,7 @@ export class GrpcServer {
         registerUseCase: this.deps.registerUseCase,
         loginUseCase: this.deps.loginUseCase,
         logoutUseCase: this.deps.logoutUseCase,
+        logoutAllUseCase: this.deps.logoutAllUseCase,
       }),
     );
   }

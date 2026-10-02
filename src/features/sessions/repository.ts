@@ -137,4 +137,28 @@ export class SessionRepository {
 
     return result.count > 0;
   }
+
+  async revokeAllByUserId(userId: string): Promise<boolean> {
+    // Database first: source of truth.
+    const sessions = await this.db<{ refreshTokenHash: string }[]>`
+      UPDATE sessions
+      SET revoked_at = CURRENT_TIMESTAMP
+      WHERE user_id = ${userId}
+        AND revoked_at IS NULL
+      RETURNING refresh_token_hash AS "refreshTokenHash";
+    `;
+
+    // Remove all cached sessions after the database is updated.
+    try {
+      const cacheKeys = sessions.map((session) => sessionCacheKey(session.refreshTokenHash));
+
+      if (cacheKeys.length > 0) {
+        await this.redis.del(cacheKeys);
+      }
+    } catch {
+      // The database remains authoritative even if cache deletion fails.
+    }
+
+    return sessions.length > 0;
+  }
 }
