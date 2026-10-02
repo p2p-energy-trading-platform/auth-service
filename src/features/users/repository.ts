@@ -11,8 +11,11 @@ export interface RegisteredUser {
   id: string;
   email: string;
   status: string;
+  onboardingState: OnboardingState;
   createdAt: string;
 }
+
+export type OnboardingState = 'registered' | 'pending_verification' | 'verified' | 'rejected';
 
 export interface AuthenticatedUser {
   id: string;
@@ -60,7 +63,7 @@ export class UserRepository {
             WITH new_user AS (
                 INSERT INTO users (email, status)
                 VALUES (${params.email}, 'PENDING')
-                RETURNING id, email, status, created_at AS "createdAt"
+                RETURNING id, email, status, onboarding_state AS "onboardingState", created_at AS "createdAt"
             ),
             new_credentials AS (
                 INSERT INTO credentials (user_id, password_hash)
@@ -80,5 +83,33 @@ export class UserRepository {
     }
 
     return newUser;
+  }
+
+  async transitionOnboardingState(userId: string, nextState: OnboardingState): Promise<OnboardingState> {
+    const [user] = await this.db<{ onboardingState: OnboardingState }[]>`
+      UPDATE users
+      SET onboarding_state = ${nextState}
+      WHERE id = ${userId}
+        AND onboarding_state = ANY(${getAllowedPreviousStates(nextState)}::text[])
+      RETURNING onboarding_state AS "onboardingState";
+    `;
+
+    if (!user) {
+      throw new AppError(ErrorCodes.CONFLICT, 'Invalid onboarding state transition');
+    }
+
+    return user.onboardingState;
+  }
+}
+
+function getAllowedPreviousStates(nextState: OnboardingState): OnboardingState[] {
+  switch (nextState) {
+    case 'pending_verification':
+      return ['registered', 'rejected'];
+    case 'verified':
+    case 'rejected':
+      return ['pending_verification'];
+    case 'registered':
+      return [];
   }
 }
