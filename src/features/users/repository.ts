@@ -85,7 +85,10 @@ export class UserRepository {
     return newUser;
   }
 
-  async transitionOnboardingState(userId: string, nextState: OnboardingState): Promise<OnboardingState> {
+  async transitionOnboardingState(
+    userId: string,
+    nextState: OnboardingState,
+  ): Promise<OnboardingState> {
     const [user] = await this.db<{ onboardingState: OnboardingState }[]>`
       UPDATE users
       SET onboarding_state = ${nextState}
