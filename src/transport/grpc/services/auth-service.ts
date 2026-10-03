@@ -86,10 +86,7 @@ export function createAuthServiceImplementation(
         const userId = context.requestHeader.get('x-gridx-user-id');
 
         if (!userId) {
-          throw new AppError(
-            ErrorCodes.UNAUTHENTICATED,
-            'Authenticated user is required',
-          );
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
         }
 
         const result = await deps.logoutAllUseCase.execute({
@@ -109,10 +106,7 @@ export function createAuthServiceImplementation(
         const userId = context.requestHeader.get('x-gridx-user-id');
 
         if (!userId) {
-          throw new AppError(
-            ErrorCodes.UNAUTHENTICATED,
-            'Authenticated user is required',
-          );
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
         }
 
         const profile = await deps.getProfileUseCase.execute({
@@ -133,46 +127,28 @@ export function createAuthServiceImplementation(
         throw toGrpcError(error);
       }
     },
-        updateProfile: async () => {
-      throw new AppError(
-        ErrorCodes.NOT_IMPLEMENTED,
-        'UpdateProfile is not implemented yet',
-      );
+    updateProfile: async () => {
+      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'UpdateProfile is not implemented yet');
     },
 
     changePassword: async () => {
-      throw new AppError(
-        ErrorCodes.NOT_IMPLEMENTED,
-        'ChangePassword is not implemented yet',
-      );
+      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'ChangePassword is not implemented yet');
     },
 
     requestPasswordReset: async () => {
-      throw new AppError(
-        ErrorCodes.NOT_IMPLEMENTED,
-        'RequestPasswordReset is not implemented yet',
-      );
+      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'RequestPasswordReset is not implemented yet');
     },
 
     resetPassword: async () => {
-      throw new AppError(
-        ErrorCodes.NOT_IMPLEMENTED,
-        'ResetPassword is not implemented yet',
-      );
+      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'ResetPassword is not implemented yet');
     },
 
     requestEmailChange: async () => {
-      throw new AppError(
-        ErrorCodes.NOT_IMPLEMENTED,
-        'RequestEmailChange is not implemented yet',
-      );
+      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'RequestEmailChange is not implemented yet');
     },
 
     verifyEmailChange: async () => {
-      throw new AppError(
-        ErrorCodes.NOT_IMPLEMENTED,
-        'VerifyEmailChange is not implemented yet',
-      );
+      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'VerifyEmailChange is not implemented yet');
     },
   };
 }
