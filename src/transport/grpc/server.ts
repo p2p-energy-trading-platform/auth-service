@@ -10,6 +10,7 @@ import { RegisterUseCase } from '../../features/authentication/register.js';
 import { LoginUseCase } from '../../features/authentication/login.js';
 import { LogoutUseCase } from '../../features/authentication/logout.js';
 import { LogoutAllUseCase } from '../../features/authentication/logout-all.js';
+import { GetProfileUseCase } from '../../features/users/get-profile.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
@@ -17,6 +18,7 @@ export interface GrpcServerDependencies {
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
+  getProfileUseCase: GetProfileUseCase;
 }
 
 export class GrpcServer {
@@ -39,6 +41,7 @@ export class GrpcServer {
         loginUseCase: this.deps.loginUseCase,
         logoutUseCase: this.deps.logoutUseCase,
         logoutAllUseCase: this.deps.logoutAllUseCase,
+        getProfileUseCase: this.deps.getProfileUseCase,
       }),
     );
   }

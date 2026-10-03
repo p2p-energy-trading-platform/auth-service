@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { AppError } from '../../errors/app-error.js';
 import { ErrorCodes } from '../../errors/codes.js';
 import type { PasswordHasher } from '../../infrastructure/crypto/password-hasher.js';
@@ -31,11 +32,13 @@ export class RegisterUseCase {
     }
 
     const passwordHash = await this.passwordHasher.hash(input.password);
+    const name = `user${randomInt(1000, 10000)}`;
 
     try {
       return await this.userRepo.createUsersWithCredentials({
         email: normalizedEmail,
-        passwordHash: passwordHash,
+        passwordHash,
+        name,
       });
     } catch (error: any) {
       if (error.code === '23505') {
