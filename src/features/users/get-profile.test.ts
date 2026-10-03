@@ -5,6 +5,7 @@ import { GetProfileUseCase } from './get-profile.js';
 interface MockUser {
   id: string;
   email: string;
+  name: string | null;
   status: string;
   createdAt: string;
 }
@@ -17,6 +18,7 @@ describe('GetProfileUseCase', () => {
       findById: vi.fn<FindById>().mockResolvedValue({
         id: 'user-123',
         email: 'user@example.com',
+        name: 'user1234',
         status: 'ACTIVE',
         createdAt: '2026-10-03T00:00:00.000Z',
       }),
@@ -31,8 +33,7 @@ describe('GetProfileUseCase', () => {
     expect(result).toEqual({
       id: 'user-123',
       email: 'user@example.com',
-      firstName: '',
-      lastName: '',
+      name: 'user1234',
       status: 'ACTIVE',
       createdAt: '2026-10-03T00:00:00.000Z',
     });
@@ -75,6 +76,7 @@ describe('GetProfileUseCase', () => {
       findById: vi.fn<FindById>().mockResolvedValue({
         id: 'user-123',
         email: 'user@example.com',
+        name: 'user1234',
         status: 'ACTIVE',
         createdAt: '2026-10-03T00:00:00.000Z',
       }),

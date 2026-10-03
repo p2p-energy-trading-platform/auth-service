@@ -117,8 +117,7 @@ export function createAuthServiceImplementation(
           profile: {
             userId: profile.id,
             email: profile.email,
-            firstName: profile.firstName,
-            lastName: profile.lastName,
+            name: profile.name ?? '',
             status: profile.status,
             createdAt: profile.createdAt,
           },

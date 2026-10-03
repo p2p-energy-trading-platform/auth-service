@@ -5,11 +5,13 @@ import type { DbClient } from '../../infrastructure/database/client.js';
 interface CreateUserParams {
   email: string;
   passwordHash: string;
+  name: string;
 }
 
 export interface RegisteredUser {
   id: string;
   email: string;
+  name: string;
   status: string;
   createdAt: string;
 }
@@ -58,9 +60,9 @@ export class UserRepository {
   async createUsersWithCredentials(params: CreateUserParams): Promise<RegisteredUser> {
     const [newUser] = await this.db<RegisteredUser[]>`
             WITH new_user AS (
-                INSERT INTO users (email, status)
-                VALUES (${params.email}, 'PENDING')
-                RETURNING id, email, status, created_at AS "createdAt"
+                INSERT INTO users (email, name, status)
+                VALUES (${params.email}, ${params.name}, 'PENDING')
+                RETURNING id, email, name, status, created_at AS "createdAt"
             ),
             new_credentials AS (
                 INSERT INTO credentials (user_id, password_hash)
@@ -85,6 +87,7 @@ export class UserRepository {
   async findById(userId: string): Promise<{
     id: string;
     email: string;
+    name: string | null;
     status: string;
     createdAt: string;
   } | null> {
@@ -92,6 +95,7 @@ export class UserRepository {
       {
         id: string;
         email: string;
+        name: string | null;
         status: string;
         createdAt: string;
       }[]
@@ -99,6 +103,7 @@ export class UserRepository {
       SELECT
         id,
         email,
+        name,
         status,
         created_at AS "createdAt"
       FROM users

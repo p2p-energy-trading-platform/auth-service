@@ -5,8 +5,7 @@ import type { UserRepository } from './repository.js';
 export interface UserProfile {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string | null;
   status: string;
   createdAt: string;
 }
@@ -32,8 +31,7 @@ export class GetProfileUseCase {
     return {
       id: user.id,
       email: user.email,
-      firstName: '',
-      lastName: '',
+      name: user.name,
       status: user.status,
       createdAt: user.createdAt,
     };
