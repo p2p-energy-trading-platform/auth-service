@@ -81,4 +81,32 @@ export class UserRepository {
 
     return newUser;
   }
+  
+  async findById(
+    userId: string,
+  ): Promise<{
+    id: string;
+    email: string;
+    status: string;
+    createdAt: string;
+  } | null> {
+    const [user] = await this.db<
+      {
+        id: string;
+        email: string;
+        status: string;
+        createdAt: string;
+      }[]
+    >`
+      SELECT
+        id,
+        email,
+        status,
+        created_at AS "createdAt"
+      FROM users
+      WHERE id = ${userId};
+    `;
+
+    return user ?? null;
+  }
 }

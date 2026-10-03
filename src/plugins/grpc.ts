@@ -8,6 +8,7 @@ import { RegisterUseCase } from '../features/authentication/register.js';
 import { LoginUseCase } from '../features/authentication/login.js';
 import { LogoutUseCase } from '../features/authentication/logout.js';
 import { LogoutAllUseCase } from '../features/authentication/logout-all.js';
+import { GetProfileUseCase } from '../features/users/get-profile.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
@@ -27,6 +28,7 @@ export default fp(async (fastify) => {
 
   const logoutUseCase = new LogoutUseCase(sessionRepository);
   const logoutAllUseCase = new LogoutAllUseCase(sessionRepository);
+  const getProfileUseCase = new GetProfileUseCase(userRepository);
 
   const grpcServer = new GrpcServer({
     config: fastify.config,
@@ -34,6 +36,7 @@ export default fp(async (fastify) => {
     loginUseCase,
     logoutUseCase,
     logoutAllUseCase,
+    getProfileUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);
