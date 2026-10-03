@@ -20,19 +20,13 @@ export class GetProfileUseCase {
 
   async execute(input: GetProfileInput): Promise<UserProfile> {
     if (!input.userId) {
-      throw new AppError(
-        ErrorCodes.UNAUTHENTICATED,
-        'Authenticated user is required',
-      );
+      throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
     }
 
     const user = await this.users.findById(input.userId);
 
     if (!user) {
-      throw new AppError(
-        ErrorCodes.NOT_FOUND,
-        'User not found',
-      );
+      throw new AppError(ErrorCodes.NOT_FOUND, 'User not found');
     }
 
     return {

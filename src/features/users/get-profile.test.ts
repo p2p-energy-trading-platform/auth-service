@@ -47,9 +47,7 @@ describe('GetProfileUseCase', () => {
 
     const useCase = new GetProfileUseCase(users as never);
 
-    await expect(
-      useCase.execute({ userId: '' }),
-    ).rejects.toMatchObject({
+    await expect(useCase.execute({ userId: '' })).rejects.toMatchObject({
       code: 'UNAUTHENTICATED',
       message: 'Authenticated user is required',
     });
@@ -64,9 +62,7 @@ describe('GetProfileUseCase', () => {
 
     const useCase = new GetProfileUseCase(users as never);
 
-    await expect(
-      useCase.execute({ userId: 'unknown-user' }),
-    ).rejects.toMatchObject({
+    await expect(useCase.execute({ userId: 'unknown-user' })).rejects.toMatchObject({
       code: 'NOT_FOUND',
       message: 'User not found',
     });

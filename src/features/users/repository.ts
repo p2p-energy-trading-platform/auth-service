@@ -81,10 +81,8 @@ export class UserRepository {
 
     return newUser;
   }
-  
-  async findById(
-    userId: string,
-  ): Promise<{
+
+  async findById(userId: string): Promise<{
     id: string;
     email: string;
     status: string;
