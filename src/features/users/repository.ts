@@ -98,4 +98,20 @@ export class UserRepository {
 
     return user ?? null;
   }
+
+  async updateName(userId: string, name: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
+      UPDATE users
+      SET name = ${name}
+      WHERE id = ${userId}
+      RETURNING
+        id,
+        email,
+        name,
+        status,
+        created_at AS "createdAt";
+    `;
+
+    return user ?? null;
+  }
 }
