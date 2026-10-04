@@ -11,7 +11,7 @@ interface CreateUserParams {
 export interface RegisteredUser {
   id: string;
   email: string;
-  name: string;
+  name: string | null;
   status: string;
   createdAt: string;
 }
@@ -84,22 +84,8 @@ export class UserRepository {
     return newUser;
   }
 
-  async findById(userId: string): Promise<{
-    id: string;
-    email: string;
-    name: string | null;
-    status: string;
-    createdAt: string;
-  } | null> {
-    const [user] = await this.db<
-      {
-        id: string;
-        email: string;
-        name: string | null;
-        status: string;
-        createdAt: string;
-      }[]
-    >`
+  async findById(userId: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
       SELECT
         id,
         email,
