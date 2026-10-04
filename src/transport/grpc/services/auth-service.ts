@@ -13,14 +13,20 @@ import {
   LogoutAllResponseSchema,
   LogoutResponseSchema,
   RegisterResponseSchema,
+  GetUserResponseSchema,
+  CheckPermissionResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
+import type { CheckPermissionUseCase } from '../../../features/authorization/check-permission.js';
+import type { GetUseCase } from '../../../features/authorization/get-user.js';
 
 interface AuthServiceDependencies {
   registerUseCase: RegisterUseCase;
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
+  getUserUseCase: GetUseCase;
+  checkPermissionUseCase: CheckPermissionUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -91,6 +97,36 @@ export function createAuthServiceImplementation(
 
         return create(LogoutAllResponseSchema, {
           success: result.success,
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
+    getUser: async (req, _context) => {
+      try {
+        const result = await deps.getUserUseCase.execute({
+          userId: req.userId,
+        });
+
+        return create(GetUserResponseSchema, {
+          userId: result.id,
+          email: result.email,
+          status: result.status,
+          roles: result.roles,
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
+    checkPermission: async (req, _context) => {
+      try {
+        const result = await deps.checkPermissionUseCase.execute({
+          userId: req.userId,
+          permissionName: req.permissionName,
+        });
+
+        return create(CheckPermissionResponseSchema, {
+          allowed: result.allowed,
         });
       } catch (error) {
         throw toGrpcError(error);
