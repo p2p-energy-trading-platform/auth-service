@@ -12,6 +12,7 @@ import { GetProfileUseCase } from '../features/users/get-profile.js';
 import { UpdateProfileUseCase } from '../features/users/update-profile.js';
 import { ChangePasswordUseCase } from '../features/authentication/change-password.js';
 import { RequestPasswordResetUseCase } from '../features/authentication/request-password-reset.js';
+import { RequestEmailChangeUseCase } from '../features/authentication/request-email-change.js';
 import { ResetPasswordUseCase } from '../features/authentication/reset-password.js';
 import { RedisTemporaryTokenStore } from '../infrastructure/redis/temporary-token-store.js';
 import { MailtrapEmailProvider } from '../infrastructure/email/mailtrap-provider.js';
@@ -58,6 +59,14 @@ export default fp(async (fastify) => {
     fastify.config.PASSWORD_RESET_URL,
   );
 
+  const requestEmailChangeUseCase = new RequestEmailChangeUseCase(
+    userRepository,
+    temporaryTokenStore,
+    emailProvider,
+    fastify.config.EMAIL_CHANGE_TOKEN_TTL_SECONDS,
+    fastify.config.EMAIL_CHANGE_URL,
+  );
+
   const resetPasswordUseCase = new ResetPasswordUseCase(
     userRepository,
     passwordHasher,
@@ -75,6 +84,7 @@ export default fp(async (fastify) => {
     updateProfileUseCase,
     changePasswordUseCase,
     requestPasswordResetUseCase,
+    requestEmailChangeUseCase,
     resetPasswordUseCase,
   });
 

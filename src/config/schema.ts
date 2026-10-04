@@ -37,6 +37,8 @@ export const envSchema = z.object({
 
   PASSWORD_RESET_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   PASSWORD_RESET_URL: z.string().url(),
+  EMAIL_CHANGE_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
+  EMAIL_CHANGE_URL: z.string().url(),
 
   MAILTRAP_API_KEY: z.string().min(1),
   MAILTRAP_FROM_EMAIL: z.string().email(),

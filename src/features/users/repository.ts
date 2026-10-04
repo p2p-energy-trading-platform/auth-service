@@ -115,6 +115,22 @@ export class UserRepository {
     return user ?? null;
   }
 
+  async updateEmail(userId: string, email: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
+      UPDATE users
+      SET email = ${email}
+      WHERE id = ${userId}
+      RETURNING
+        id,
+        email,
+        name,
+        status,
+        created_at AS "createdAt";
+    `;
+
+    return user ?? null;
+  }
+
   async findPasswordHashById(userId: string): Promise<string | null> {
     const [user] = await this.db<{ passwordHash: string }[]>`
       SELECT password_hash AS "passwordHash"

@@ -15,6 +15,7 @@ import { UpdateProfileUseCase } from '../../features/users/update-profile.js';
 import { ChangePasswordUseCase } from '../../features/authentication/change-password.js';
 import { RequestPasswordResetUseCase } from '../../features/authentication/request-password-reset.js';
 import { ResetPasswordUseCase } from '../../features/authentication/reset-password.js';
+import { RequestEmailChangeUseCase } from '../../features/authentication/request-email-change.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
@@ -26,6 +27,7 @@ export interface GrpcServerDependencies {
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
+  requestEmailChangeUseCase: RequestEmailChangeUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
 }
 
@@ -53,6 +55,7 @@ export class GrpcServer {
         updateProfileUseCase: this.deps.updateProfileUseCase,
         changePasswordUseCase: this.deps.changePasswordUseCase,
         requestPasswordResetUseCase: this.deps.requestPasswordResetUseCase,
+        requestEmailChangeUseCase: this.deps.requestEmailChangeUseCase,
         resetPasswordUseCase: this.deps.resetPasswordUseCase,
       }),
     );
