@@ -9,12 +9,14 @@ import { ErrorCodes } from '../../../errors/codes.js';
 import type { GetProfileUseCase } from '../../../features/users/get-profile.js';
 import type { UpdateProfileUseCase } from '../../../features/users/update-profile.js';
 import type { ChangePasswordUseCase } from '../../../features/authentication/change-password.js';
+import type { RequestPasswordResetUseCase } from '../../../features/authentication/request-password-reset.js';
 
 import {
   AuthService,
   GetProfileResponseSchema,
   UpdateProfileResponseSchema,
   ChangePasswordResponseSchema,
+  RequestPasswordResetResponseSchema,
   LoginResponseSchema,
   LogoutAllResponseSchema,
   LogoutResponseSchema,
@@ -30,6 +32,7 @@ interface AuthServiceDependencies {
   getProfileUseCase: GetProfileUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
+  requestPasswordResetUseCase: RequestPasswordResetUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -182,8 +185,18 @@ export function createAuthServiceImplementation(
       }
     },
 
-    requestPasswordReset: async () => {
-      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'RequestPasswordReset is not implemented yet');
+    requestPasswordReset: async (req) => {
+      try {
+        const result = await deps.requestPasswordResetUseCase.execute({
+          email: req.email,
+        });
+
+        return create(RequestPasswordResetResponseSchema, {
+          success: result.success,
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
     },
 
     resetPassword: async () => {

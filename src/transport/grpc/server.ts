@@ -13,6 +13,7 @@ import { LogoutAllUseCase } from '../../features/authentication/logout-all.js';
 import { GetProfileUseCase } from '../../features/users/get-profile.js';
 import { UpdateProfileUseCase } from '../../features/users/update-profile.js';
 import { ChangePasswordUseCase } from '../../features/authentication/change-password.js';
+import { RequestPasswordResetUseCase } from '../../features/authentication/request-password-reset.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
@@ -23,6 +24,7 @@ export interface GrpcServerDependencies {
   getProfileUseCase: GetProfileUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
+  requestPasswordResetUseCase: RequestPasswordResetUseCase;
 }
 
 export class GrpcServer {
@@ -48,6 +50,7 @@ export class GrpcServer {
         getProfileUseCase: this.deps.getProfileUseCase,
         updateProfileUseCase: this.deps.updateProfileUseCase,
         changePasswordUseCase: this.deps.changePasswordUseCase,
+        requestPasswordResetUseCase: this.deps.requestPasswordResetUseCase,
       }),
     );
   }
