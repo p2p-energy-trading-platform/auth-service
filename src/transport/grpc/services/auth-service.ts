@@ -7,10 +7,12 @@ import type { LogoutAllUseCase } from '../../../features/authentication/logout-a
 import { AppError } from '../../../errors/app-error.js';
 import { ErrorCodes } from '../../../errors/codes.js';
 import type { GetProfileUseCase } from '../../../features/users/get-profile.js';
+import type { UpdateProfileUseCase } from '../../../features/users/update-profile.js';
 
 import {
   AuthService,
   GetProfileResponseSchema,
+  UpdateProfileResponseSchema,
   LoginResponseSchema,
   LogoutAllResponseSchema,
   LogoutResponseSchema,
@@ -24,6 +26,7 @@ interface AuthServiceDependencies {
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
   getProfileUseCase: GetProfileUseCase;
+  updateProfileUseCase: UpdateProfileUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -126,8 +129,31 @@ export function createAuthServiceImplementation(
         throw toGrpcError(error);
       }
     },
-    updateProfile: async () => {
-      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'UpdateProfile is not implemented yet');
+    updateProfile: async (req, context) => {
+      try {
+        const userId = context.requestHeader.get('x-gridx-user-id');
+
+        if (!userId) {
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+        }
+
+        const profile = await deps.updateProfileUseCase.execute({
+          userId,
+          name: req.name,
+        });
+
+        return create(UpdateProfileResponseSchema, {
+          profile: {
+            userId: profile.id,
+            email: profile.email,
+            name: profile.name ?? '',
+            status: profile.status,
+            createdAt: profile.createdAt,
+          },
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
     },
 
     changePassword: async () => {
