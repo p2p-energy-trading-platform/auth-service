@@ -12,6 +12,7 @@ import type { ChangePasswordUseCase } from '../../../features/authentication/cha
 import type { RequestPasswordResetUseCase } from '../../../features/authentication/request-password-reset.js';
 import type { ResetPasswordUseCase } from '../../../features/authentication/reset-password.js';
 import type { RequestEmailChangeUseCase } from '../../../features/authentication/request-email-change.js';
+import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
 
 import {
   AuthService,
@@ -25,6 +26,7 @@ import {
   LogoutResponseSchema,
   RegisterResponseSchema,
   RequestEmailChangeResponseSchema,
+  VerifyEmailChangeResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
 
@@ -39,6 +41,7 @@ interface AuthServiceDependencies {
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
   requestEmailChangeUseCase: RequestEmailChangeUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
+  verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -241,8 +244,24 @@ export function createAuthServiceImplementation(
       }
     },
 
-    verifyEmailChange: async () => {
-      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'VerifyEmailChange is not implemented yet');
+    verifyEmailChange: async (req) => {
+      try {
+        const profile = await deps.verifyEmailChangeUseCase.execute({
+          token: req.token,
+        });
+
+        return create(VerifyEmailChangeResponseSchema, {
+          profile: {
+            userId: profile.id,
+            email: profile.email,
+            name: profile.name ?? '',
+            status: profile.status,
+            createdAt: profile.createdAt,
+          },
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
     },
   };
 }

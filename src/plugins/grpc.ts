@@ -14,6 +14,7 @@ import { ChangePasswordUseCase } from '../features/authentication/change-passwor
 import { RequestPasswordResetUseCase } from '../features/authentication/request-password-reset.js';
 import { RequestEmailChangeUseCase } from '../features/authentication/request-email-change.js';
 import { ResetPasswordUseCase } from '../features/authentication/reset-password.js';
+import { VerifyEmailChangeUseCase } from '../features/authentication/verify-email-change.js';
 import { RedisTemporaryTokenStore } from '../infrastructure/redis/temporary-token-store.js';
 import { MailtrapEmailProvider } from '../infrastructure/email/mailtrap-provider.js';
 
@@ -74,6 +75,11 @@ export default fp(async (fastify) => {
     sessionRepository,
   );
 
+  const verifyEmailChangeUseCase = new VerifyEmailChangeUseCase(
+    userRepository,
+    temporaryTokenStore,
+  );
+
   const grpcServer = new GrpcServer({
     config: fastify.config,
     registerUseCase,
@@ -86,6 +92,7 @@ export default fp(async (fastify) => {
     requestPasswordResetUseCase,
     requestEmailChangeUseCase,
     resetPasswordUseCase,
+    verifyEmailChangeUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);
