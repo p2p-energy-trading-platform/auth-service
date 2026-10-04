@@ -67,7 +67,11 @@ describe('RequestPasswordResetUseCase', () => {
       }),
     );
 
-    const email = emailProvider.send.mock.calls[0]?.[0];
+    const emailCall = emailProvider.send.mock.calls[0];
+
+    expect(emailCall).toBeDefined();
+
+    const email = emailCall![0];
 
     expect(email.text).toContain('http://localhost:3000/reset-password?token=reset-token-123');
 
