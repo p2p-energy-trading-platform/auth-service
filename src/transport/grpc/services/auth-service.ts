@@ -8,11 +8,13 @@ import { AppError } from '../../../errors/app-error.js';
 import { ErrorCodes } from '../../../errors/codes.js';
 import type { GetProfileUseCase } from '../../../features/users/get-profile.js';
 import type { UpdateProfileUseCase } from '../../../features/users/update-profile.js';
+import type { ChangePasswordUseCase } from '../../../features/authentication/change-password.js';
 
 import {
   AuthService,
   GetProfileResponseSchema,
   UpdateProfileResponseSchema,
+  ChangePasswordResponseSchema,
   LoginResponseSchema,
   LogoutAllResponseSchema,
   LogoutResponseSchema,
@@ -27,6 +29,7 @@ interface AuthServiceDependencies {
   logoutAllUseCase: LogoutAllUseCase;
   getProfileUseCase: GetProfileUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
+  changePasswordUseCase: ChangePasswordUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -129,6 +132,7 @@ export function createAuthServiceImplementation(
         throw toGrpcError(error);
       }
     },
+
     updateProfile: async (req, context) => {
       try {
         const userId = context.requestHeader.get('x-gridx-user-id');
@@ -156,8 +160,26 @@ export function createAuthServiceImplementation(
       }
     },
 
-    changePassword: async () => {
-      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'ChangePassword is not implemented yet');
+    changePassword: async (req, context) => {
+      try {
+        const userId = context.requestHeader.get('x-gridx-user-id');
+
+        if (!userId) {
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+        }
+
+        const result = await deps.changePasswordUseCase.execute({
+          userId,
+          currentPassword: req.currentPassword,
+          newPassword: req.newPassword,
+        });
+
+        return create(ChangePasswordResponseSchema, {
+          success: result.success,
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
     },
 
     requestPasswordReset: async () => {
