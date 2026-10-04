@@ -11,6 +11,7 @@ import type { UpdateProfileUseCase } from '../../../features/users/update-profil
 import type { ChangePasswordUseCase } from '../../../features/authentication/change-password.js';
 import type { RequestPasswordResetUseCase } from '../../../features/authentication/request-password-reset.js';
 import type { ResetPasswordUseCase } from '../../../features/authentication/reset-password.js';
+import type { RequestEmailChangeUseCase } from '../../../features/authentication/request-email-change.js';
 
 import {
   AuthService,
@@ -23,6 +24,7 @@ import {
   LogoutAllResponseSchema,
   LogoutResponseSchema,
   RegisterResponseSchema,
+  RequestEmailChangeResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
 
@@ -35,6 +37,7 @@ interface AuthServiceDependencies {
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
+  requestEmailChangeUseCase: RequestEmailChangeUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
 }
 
@@ -217,8 +220,25 @@ export function createAuthServiceImplementation(
       }
     },
 
-    requestEmailChange: async () => {
-      throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'RequestEmailChange is not implemented yet');
+    requestEmailChange: async (req, context) => {
+      try {
+        const userId = context.requestHeader.get('x-gridx-user-id');
+
+        if (!userId) {
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+        }
+
+        const result = await deps.requestEmailChangeUseCase.execute({
+          userId,
+          newEmail: req.newEmail,
+        });
+
+        return create(RequestEmailChangeResponseSchema, {
+          success: result.success,
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
     },
 
     verifyEmailChange: async () => {
