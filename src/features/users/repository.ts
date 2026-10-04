@@ -114,4 +114,24 @@ export class UserRepository {
 
     return user ?? null;
   }
+
+  async findPasswordHashById(userId: string): Promise<string | null> {
+    const [user] = await this.db<{ passwordHash: string }[]>`
+      SELECT password_hash AS "passwordHash"
+      FROM credentials
+      WHERE user_id = ${userId};
+    `;
+
+    return user?.passwordHash ?? null;
+  }
+
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<boolean> {
+    const result = await this.db`
+      UPDATE credentials
+      SET password_hash = ${passwordHash}
+      WHERE user_id = ${userId};
+    `;
+
+    return result.count > 0;
+  }
 }
