@@ -8,9 +8,13 @@ import { RegisterUseCase } from '../features/authentication/register.js';
 import { LoginUseCase } from '../features/authentication/login.js';
 import { LogoutUseCase } from '../features/authentication/logout.js';
 import { LogoutAllUseCase } from '../features/authentication/logout-all.js';
+import { AuthorizationRepository } from '../features/authorization/repository.js';
+import { GetUseCase } from '../features/authorization/get-user.js';
+import { CheckPermissionUseCase } from '../features/authorization/check-permission.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
+  const authorizationRepository = new AuthorizationRepository(fastify.db);
   const sessionRepository = new SessionRepository(fastify.db, fastify.redis);
   const passwordHasher = new PasswordHasher();
 
@@ -28,12 +32,17 @@ export default fp(async (fastify) => {
   const logoutUseCase = new LogoutUseCase(sessionRepository);
   const logoutAllUseCase = new LogoutAllUseCase(sessionRepository);
 
+  const getUserUseCase = new GetUseCase(userRepository);
+  const checkPermissionUseCase = new CheckPermissionUseCase(authorizationRepository);
+
   const grpcServer = new GrpcServer({
     config: fastify.config,
     registerUseCase,
     loginUseCase,
     logoutUseCase,
     logoutAllUseCase,
+    getUserUseCase,
+    checkPermissionUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);
