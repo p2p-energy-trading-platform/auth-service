@@ -2,6 +2,7 @@
 ALTER TABLE kyc_submissions
 RENAME COLUMN national_id TO dubai_id;
 
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION validate_kyc_status_transition()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -22,6 +23,7 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 CREATE TRIGGER validate_users_kyc_status_transition
 BEFORE UPDATE OF kyc_status ON users
