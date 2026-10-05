@@ -5,11 +5,13 @@ import type { DbClient } from '../../infrastructure/database/client.js';
 interface CreateUserParams {
   email: string;
   passwordHash: string;
+  name: string;
 }
 
 export interface RegisteredUser {
   id: string;
   email: string;
+  name: string | null;
   status: string;
   createdAt: string;
 }
@@ -58,9 +60,9 @@ export class UserRepository {
   async createUsersWithCredentials(params: CreateUserParams): Promise<RegisteredUser> {
     const [newUser] = await this.db<RegisteredUser[]>`
             WITH new_user AS (
-                INSERT INTO users (email, status)
-                VALUES (${params.email}, 'PENDING')
-                RETURNING id, email, status, created_at AS "createdAt"
+                INSERT INTO users (email, name, status)
+                VALUES (${params.email}, ${params.name}, 'PENDING')
+                RETURNING id, email, name, status, created_at AS "createdAt"
             ),
             new_credentials AS (
                 INSERT INTO credentials (user_id, password_hash)
@@ -111,4 +113,70 @@ export class UserRepository {
 
   }
 
+  async findById(userId: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
+      SELECT
+        id,
+        email,
+        name,
+        status,
+        created_at AS "createdAt"
+      FROM users
+      WHERE id = ${userId};
+    `;
+
+    return user ?? null;
+  }
+
+  async updateName(userId: string, name: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
+      UPDATE users
+      SET name = ${name}
+      WHERE id = ${userId}
+      RETURNING
+        id,
+        email,
+        name,
+        status,
+        created_at AS "createdAt";
+    `;
+
+    return user ?? null;
+  }
+
+  async updateEmail(userId: string, email: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
+      UPDATE users
+      SET email = ${email}
+      WHERE id = ${userId}
+      RETURNING
+        id,
+        email,
+        name,
+        status,
+        created_at AS "createdAt";
+    `;
+
+    return user ?? null;
+  }
+
+  async findPasswordHashById(userId: string): Promise<string | null> {
+    const [user] = await this.db<{ passwordHash: string }[]>`
+      SELECT password_hash AS "passwordHash"
+      FROM credentials
+      WHERE user_id = ${userId};
+    `;
+
+    return user?.passwordHash ?? null;
+  }
+
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<boolean> {
+    const result = await this.db`
+      UPDATE credentials
+      SET password_hash = ${passwordHash}
+      WHERE user_id = ${userId};
+    `;
+
+    return result.count > 0;
+  }
 }
