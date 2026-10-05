@@ -50,7 +50,7 @@ describe('RequestEmailChangeUseCase', () => {
     name: 'Test User',
     status: 'ACTIVE',
     createdAt: '2026-01-01T00:00:00Z',
-    role: 'user'
+    role: 'user',
   };
 
   it('creates an email verification token and sends a verification email', async () => {

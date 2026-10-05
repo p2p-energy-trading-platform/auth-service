@@ -26,7 +26,7 @@ export interface GrpcServerDependencies {
   loginUseCase: LoginUseCase;
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
-  getUserUseCase: GetUseCase;  
+  getUserUseCase: GetUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
