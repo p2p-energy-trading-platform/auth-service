@@ -21,14 +21,29 @@ import { VerifyEmailChangeUseCase } from '../features/authentication/verify-emai
 import { RedisTemporaryTokenStore } from '../infrastructure/redis/temporary-token-store.js';
 import { MailtrapEmailProvider } from '../infrastructure/email/mailtrap-provider.js';
 import { RefreshUseCase } from '../features/authentication/refresh.js';
+import { OTPRepository } from '../infrastructure/redis/otp-repository.js';
+import { VerifyEmailUseCase } from '../features/authentication/verify-email.js';
+import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
   const authorizationRepository = new AuthorizationRepository(fastify.db);
   const sessionRepository = new SessionRepository(fastify.db, fastify.redis);
   const passwordHasher = new PasswordHasher();
+  const otpRepository = new OTPRepository(fastify.redis);
 
-  const registerUseCase = new RegisterUseCase(userRepository, passwordHasher);
+  const emailProvider = new MailtrapEmailProvider({
+    apiKey: fastify.config.MAILTRAP_API_KEY,
+    fromEmail: fastify.config.MAILTRAP_FROM_EMAIL,
+    fromName: fastify.config.MAILTRAP_FROM_NAME,
+  });
+
+  const registerUseCase = new RegisterUseCase(
+    userRepository,
+    passwordHasher,
+    emailProvider,
+    otpRepository
+  );
 
   const loginUseCase = new LoginUseCase(
     userRepository,
@@ -58,12 +73,6 @@ export default fp(async (fastify) => {
   );
 
   const temporaryTokenStore = new RedisTemporaryTokenStore(fastify.redis);
-
-  const emailProvider = new MailtrapEmailProvider({
-    apiKey: fastify.config.MAILTRAP_API_KEY,
-    fromEmail: fastify.config.MAILTRAP_FROM_EMAIL,
-    fromName: fastify.config.MAILTRAP_FROM_NAME,
-  });
 
   const requestPasswordResetUseCase = new RequestPasswordResetUseCase(
     userRepository,
@@ -95,6 +104,9 @@ export default fp(async (fastify) => {
     temporaryTokenStore,
   );
 
+  const verifyEmailUseCase = new VerifyEmailUseCase(userRepository, otpRepository);
+  const resendOtpUseCase = new ResendOtpUseCase(userRepository, emailProvider, otpRepository);
+
   const grpcServer = new GrpcServer({
     config: fastify.config,
     registerUseCase,
@@ -111,6 +123,8 @@ export default fp(async (fastify) => {
     getUserUseCase,
     checkPermissionUseCase,
     verifyEmailChangeUseCase,
+    verifyEmailUseCase,
+    resendOtpUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);

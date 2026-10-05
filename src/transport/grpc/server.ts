@@ -20,6 +20,8 @@ import { CheckPermissionUseCase } from '../../features/authorization/check-permi
 import { ResetPasswordUseCase } from '../../features/authentication/reset-password.js';
 import { VerifyEmailChangeUseCase } from '../../features/authentication/verify-email-change.js';
 import type { RefreshUseCase } from '../../features/authentication/refresh.js';
+import type { VerifyEmailUseCase } from '../../features/authentication/verify-email.js';
+import type { ResendOtpUseCase } from '../../features/authentication/resend-otp.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
@@ -37,6 +39,8 @@ export interface GrpcServerDependencies {
   checkPermissionUseCase: CheckPermissionUseCase;
   getProfileUseCase: GetProfileUseCase;
   verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
+  verifyEmailUseCase: VerifyEmailUseCase;
+  resendOtpUseCase: ResendOtpUseCase;
 }
 
 export class GrpcServer {
@@ -69,6 +73,8 @@ export class GrpcServer {
         getProfileUseCase: this.deps.getProfileUseCase,
         updateProfileUseCase: this.deps.updateProfileUseCase,
         verifyEmailChangeUseCase: this.deps.verifyEmailChangeUseCase,
+        verifyEmailUseCase: this.deps.verifyEmailUseCase,
+        resendOtpUseCase: this.deps.resendOtpUseCase,
       }),
     );
   }

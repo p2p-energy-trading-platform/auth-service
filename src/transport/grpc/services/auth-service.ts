@@ -30,11 +30,15 @@ import {
   CheckPermissionResponseSchema,
   VerifyEmailChangeResponseSchema,
   RefreshTokenResponseSchema,
+  VerifyEmailResponseSchema,
+  ResendOtpResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
 import type { CheckPermissionUseCase } from '../../../features/authorization/check-permission.js';
 import type { GetUseCase } from '../../../features/authorization/get-user.js';
 import type { RefreshUseCase } from '../../../features/authentication/refresh.js';
+import type { VerifyEmailUseCase } from '../../../features/authentication/verify-email.js';
+import type { ResendOtpUseCase } from '../../../features/authentication/resend-otp.js';
 
 interface AuthServiceDependencies {
   registerUseCase: RegisterUseCase;
@@ -51,6 +55,8 @@ interface AuthServiceDependencies {
   checkPermissionUseCase: CheckPermissionUseCase;
   getProfileUseCase: GetProfileUseCase;
   verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
+  verifyEmailUseCase: VerifyEmailUseCase;
+  resendOtpUseCase: ResendOtpUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -318,5 +324,32 @@ export function createAuthServiceImplementation(
         throw toGrpcError(error);
       }
     },
+
+    verifyEmail: async (req, _context) => {
+      try {
+        await deps.verifyEmailUseCase.execute({
+          email: req.email,
+          otp: req.otp
+        });
+
+        return create(VerifyEmailResponseSchema, {
+          success: true,
+          message: "Email verified successfully",
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
+
+    resendOtp: async (req, _context) => {
+      try {
+        await deps.resendOtpUseCase.execute(req.email);
+        return create(ResendOtpResponseSchema, {
+          success: true
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    }
   };
 }
