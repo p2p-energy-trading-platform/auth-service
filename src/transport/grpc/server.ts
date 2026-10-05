@@ -19,11 +19,13 @@ import { GetUseCase } from '../../features/authorization/get-user.js';
 import { CheckPermissionUseCase } from '../../features/authorization/check-permission.js';
 import { ResetPasswordUseCase } from '../../features/authentication/reset-password.js';
 import { VerifyEmailChangeUseCase } from '../../features/authentication/verify-email-change.js';
+import type { RefreshUseCase } from '../../features/authentication/refresh.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
   registerUseCase: RegisterUseCase;
   loginUseCase: LoginUseCase;
+  refreshUseCase: RefreshUseCase;
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
   getUserUseCase: GetUseCase;
@@ -55,6 +57,7 @@ export class GrpcServer {
       createAuthServiceImplementation({
         registerUseCase: this.deps.registerUseCase,
         loginUseCase: this.deps.loginUseCase,
+        refreshUseCase: this.deps.refreshUseCase,
         logoutUseCase: this.deps.logoutUseCase,
         logoutAllUseCase: this.deps.logoutAllUseCase,
         getUserUseCase: this.deps.getUserUseCase,

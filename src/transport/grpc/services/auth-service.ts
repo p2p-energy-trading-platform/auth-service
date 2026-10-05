@@ -29,14 +29,17 @@ import {
   GetUserResponseSchema,
   CheckPermissionResponseSchema,
   VerifyEmailChangeResponseSchema,
+  RefreshTokenResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
 import type { CheckPermissionUseCase } from '../../../features/authorization/check-permission.js';
 import type { GetUseCase } from '../../../features/authorization/get-user.js';
+import type { RefreshUseCase } from '../../../features/authentication/refresh.js';
 
 interface AuthServiceDependencies {
   registerUseCase: RegisterUseCase;
   loginUseCase: LoginUseCase;
+  refreshUseCase: RefreshUseCase;
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
   getUserUseCase: GetUseCase;
@@ -85,6 +88,22 @@ export function createAuthServiceImplementation(
           accessToken: result.accessToken,
           refreshToken: result.refreshToken,
           expiresIn: BigInt(result.expiresIn),
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
+
+    refreshToken: async (req, _context) => {
+      try {
+        const result = await deps.refreshUseCase.execute({
+          refreshToken: req.refreshToken,
+        });
+
+        return create(RefreshTokenResponseSchema, {
+          refreshToken: result.refreshToken,
+          accessToken: result.accessToken,
+          expiresIn: result.expiresIn,
         });
       } catch (error) {
         throw toGrpcError(error);

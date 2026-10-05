@@ -20,6 +20,7 @@ import { ResetPasswordUseCase } from '../features/authentication/reset-password.
 import { VerifyEmailChangeUseCase } from '../features/authentication/verify-email-change.js';
 import { RedisTemporaryTokenStore } from '../infrastructure/redis/temporary-token-store.js';
 import { MailtrapEmailProvider } from '../infrastructure/email/mailtrap-provider.js';
+import { RefreshUseCase } from '../features/authentication/refresh.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
@@ -32,6 +33,14 @@ export default fp(async (fastify) => {
   const loginUseCase = new LoginUseCase(
     userRepository,
     passwordHasher,
+    fastify.jwtSigner,
+    sessionRepository,
+    fastify.config.AUTH_ACCESS_TOKEN_TTL_SECONDS,
+    fastify.config.AUTH_REFRESH_TOKEN_TTL_SECONDS,
+  );
+
+  const refreshUseCase = new RefreshUseCase(
+    userRepository,
     fastify.jwtSigner,
     sessionRepository,
     fastify.config.AUTH_ACCESS_TOKEN_TTL_SECONDS,
@@ -90,6 +99,7 @@ export default fp(async (fastify) => {
     config: fastify.config,
     registerUseCase,
     loginUseCase,
+    refreshUseCase,
     logoutUseCase,
     logoutAllUseCase,
     getProfileUseCase,
