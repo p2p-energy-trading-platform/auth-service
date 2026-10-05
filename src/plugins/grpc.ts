@@ -8,6 +8,9 @@ import { RegisterUseCase } from '../features/authentication/register.js';
 import { LoginUseCase } from '../features/authentication/login.js';
 import { LogoutUseCase } from '../features/authentication/logout.js';
 import { LogoutAllUseCase } from '../features/authentication/logout-all.js';
+import { AuthorizationRepository } from '../features/authorization/repository.js';
+import { GetUseCase } from '../features/authorization/get-user.js';
+import { CheckPermissionUseCase } from '../features/authorization/check-permission.js';
 import { GetProfileUseCase } from '../features/users/get-profile.js';
 import { UpdateProfileUseCase } from '../features/users/update-profile.js';
 import { ChangePasswordUseCase } from '../features/authentication/change-password.js';
@@ -17,9 +20,11 @@ import { ResetPasswordUseCase } from '../features/authentication/reset-password.
 import { VerifyEmailChangeUseCase } from '../features/authentication/verify-email-change.js';
 import { RedisTemporaryTokenStore } from '../infrastructure/redis/temporary-token-store.js';
 import { MailtrapEmailProvider } from '../infrastructure/email/mailtrap-provider.js';
+import { RefreshUseCase } from '../features/authentication/refresh.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
+  const authorizationRepository = new AuthorizationRepository(fastify.db);
   const sessionRepository = new SessionRepository(fastify.db, fastify.redis);
   const passwordHasher = new PasswordHasher();
 
@@ -28,6 +33,14 @@ export default fp(async (fastify) => {
   const loginUseCase = new LoginUseCase(
     userRepository,
     passwordHasher,
+    fastify.jwtSigner,
+    sessionRepository,
+    fastify.config.AUTH_ACCESS_TOKEN_TTL_SECONDS,
+    fastify.config.AUTH_REFRESH_TOKEN_TTL_SECONDS,
+  );
+
+  const refreshUseCase = new RefreshUseCase(
+    userRepository,
     fastify.jwtSigner,
     sessionRepository,
     fastify.config.AUTH_ACCESS_TOKEN_TTL_SECONDS,
@@ -75,6 +88,8 @@ export default fp(async (fastify) => {
     sessionRepository,
   );
 
+  const getUserUseCase = new GetUseCase(userRepository);
+  const checkPermissionUseCase = new CheckPermissionUseCase(authorizationRepository);
   const verifyEmailChangeUseCase = new VerifyEmailChangeUseCase(
     userRepository,
     temporaryTokenStore,
@@ -84,6 +99,7 @@ export default fp(async (fastify) => {
     config: fastify.config,
     registerUseCase,
     loginUseCase,
+    refreshUseCase,
     logoutUseCase,
     logoutAllUseCase,
     getProfileUseCase,
@@ -92,6 +108,8 @@ export default fp(async (fastify) => {
     requestPasswordResetUseCase,
     requestEmailChangeUseCase,
     resetPasswordUseCase,
+    getUserUseCase,
+    checkPermissionUseCase,
     verifyEmailChangeUseCase,
   });
 

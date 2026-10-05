@@ -26,21 +26,30 @@ import {
   LogoutResponseSchema,
   RegisterResponseSchema,
   RequestEmailChangeResponseSchema,
+  GetUserResponseSchema,
+  CheckPermissionResponseSchema,
   VerifyEmailChangeResponseSchema,
+  RefreshTokenResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
+import type { CheckPermissionUseCase } from '../../../features/authorization/check-permission.js';
+import type { GetUseCase } from '../../../features/authorization/get-user.js';
+import type { RefreshUseCase } from '../../../features/authentication/refresh.js';
 
 interface AuthServiceDependencies {
   registerUseCase: RegisterUseCase;
   loginUseCase: LoginUseCase;
+  refreshUseCase: RefreshUseCase;
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
-  getProfileUseCase: GetProfileUseCase;
+  getUserUseCase: GetUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
   requestEmailChangeUseCase: RequestEmailChangeUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
+  checkPermissionUseCase: CheckPermissionUseCase;
+  getProfileUseCase: GetProfileUseCase;
   verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
 }
 
@@ -85,6 +94,22 @@ export function createAuthServiceImplementation(
       }
     },
 
+    refreshToken: async (req, _context) => {
+      try {
+        const result = await deps.refreshUseCase.execute({
+          refreshToken: req.refreshToken,
+        });
+
+        return create(RefreshTokenResponseSchema, {
+          refreshToken: result.refreshToken,
+          accessToken: result.accessToken,
+          expiresIn: result.expiresIn,
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
+
     logout: async (req, _context) => {
       try {
         const result = await deps.logoutUseCase.execute({
@@ -118,6 +143,22 @@ export function createAuthServiceImplementation(
         throw toGrpcError(error);
       }
     },
+    getUser: async (req, _context) => {
+      try {
+        const result = await deps.getUserUseCase.execute({
+          userId: req.userId,
+        });
+
+        return create(GetUserResponseSchema, {
+          userId: result.id,
+          email: result.email,
+          status: result.status,
+          role: result.role,
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
 
     getProfile: async (_req, context) => {
       try {
@@ -139,6 +180,20 @@ export function createAuthServiceImplementation(
             status: profile.status,
             createdAt: profile.createdAt,
           },
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
+    checkPermission: async (req, _context) => {
+      try {
+        const result = await deps.checkPermissionUseCase.execute({
+          userId: req.userId,
+          permissionName: req.permissionName,
+        });
+
+        return create(CheckPermissionResponseSchema, {
+          allowed: result.allowed,
         });
       } catch (error) {
         throw toGrpcError(error);

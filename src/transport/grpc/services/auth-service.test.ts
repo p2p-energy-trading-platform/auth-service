@@ -29,6 +29,7 @@ const profile = {
   name: 'Test User',
   status: 'ACTIVE',
   createdAt: '2026-01-01T00:00:00.000Z',
+  role: 'user',
 };
 
 type MockDependencies = {

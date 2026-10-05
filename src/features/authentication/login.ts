@@ -55,7 +55,7 @@ export class LoginUseCase {
 
     const accessToken = await this.jwtSigner.signAccessToken({
       sub: user.id,
-      roles: user.roles,
+      role: user.role,
     });
 
     const refreshToken = randomBytes(32).toString('base64url');

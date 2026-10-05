@@ -15,21 +15,27 @@ import { UpdateProfileUseCase } from '../../features/users/update-profile.js';
 import { ChangePasswordUseCase } from '../../features/authentication/change-password.js';
 import { RequestPasswordResetUseCase } from '../../features/authentication/request-password-reset.js';
 import { RequestEmailChangeUseCase } from '../../features/authentication/request-email-change.js';
+import { GetUseCase } from '../../features/authorization/get-user.js';
+import { CheckPermissionUseCase } from '../../features/authorization/check-permission.js';
 import { ResetPasswordUseCase } from '../../features/authentication/reset-password.js';
 import { VerifyEmailChangeUseCase } from '../../features/authentication/verify-email-change.js';
+import type { RefreshUseCase } from '../../features/authentication/refresh.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
   registerUseCase: RegisterUseCase;
   loginUseCase: LoginUseCase;
+  refreshUseCase: RefreshUseCase;
   logoutUseCase: LogoutUseCase;
   logoutAllUseCase: LogoutAllUseCase;
-  getProfileUseCase: GetProfileUseCase;
+  getUserUseCase: GetUseCase;
   updateProfileUseCase: UpdateProfileUseCase;
   changePasswordUseCase: ChangePasswordUseCase;
   requestPasswordResetUseCase: RequestPasswordResetUseCase;
   requestEmailChangeUseCase: RequestEmailChangeUseCase;
   resetPasswordUseCase: ResetPasswordUseCase;
+  checkPermissionUseCase: CheckPermissionUseCase;
+  getProfileUseCase: GetProfileUseCase;
   verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
 }
 
@@ -51,14 +57,17 @@ export class GrpcServer {
       createAuthServiceImplementation({
         registerUseCase: this.deps.registerUseCase,
         loginUseCase: this.deps.loginUseCase,
+        refreshUseCase: this.deps.refreshUseCase,
         logoutUseCase: this.deps.logoutUseCase,
         logoutAllUseCase: this.deps.logoutAllUseCase,
-        getProfileUseCase: this.deps.getProfileUseCase,
-        updateProfileUseCase: this.deps.updateProfileUseCase,
+        getUserUseCase: this.deps.getUserUseCase,
+        checkPermissionUseCase: this.deps.checkPermissionUseCase,
         changePasswordUseCase: this.deps.changePasswordUseCase,
         requestPasswordResetUseCase: this.deps.requestPasswordResetUseCase,
         requestEmailChangeUseCase: this.deps.requestEmailChangeUseCase,
         resetPasswordUseCase: this.deps.resetPasswordUseCase,
+        getProfileUseCase: this.deps.getProfileUseCase,
+        updateProfileUseCase: this.deps.updateProfileUseCase,
         verifyEmailChangeUseCase: this.deps.verifyEmailChangeUseCase,
       }),
     );

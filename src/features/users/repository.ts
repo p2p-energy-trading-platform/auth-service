@@ -13,15 +13,12 @@ export interface RegisteredUser {
   email: string;
   name: string | null;
   status: string;
+  role: string;
   createdAt: string;
 }
 
-export interface AuthenticatedUser {
-  id: string;
-  email: string;
-  status: string;
+export interface AuthenticatedUser extends RegisteredUser {
   passwordHash: string;
-  roles: string[];
 }
 
 export class UserRepository {
@@ -40,18 +37,15 @@ export class UserRepository {
       SELECT
         u.id,
         u.email,
+        u.name,
         u.status,
-        c.password_hash AS "passwordHash",
-        COALESCE(
-          array_agg(r.name) FILTER (WHERE r.name IS NOT NULL),
-          '{}'
-        ) AS roles
+        r.name AS role,
+        u.created_at AS "createdAt",
+        c.password_hash AS "passwordHash"
       FROM users u
       INNER JOIN credentials c ON c.user_id = u.id
-      LEFT JOIN user_roles ur ON ur.user_id = u.id
-      LEFT JOIN roles r ON r.id = ur.role_id
-      WHERE LOWER(u.email) = LOWER(${email})
-      GROUP BY u.id, u.email, u.status, c.password_hash;
+      LEFT JOIN roles r ON r.id = u.role_id
+      WHERE LOWER(u.email) = LOWER(${email});
     `;
 
     return user ?? null;
@@ -59,23 +53,25 @@ export class UserRepository {
 
   async createUsersWithCredentials(params: CreateUserParams): Promise<RegisteredUser> {
     const [newUser] = await this.db<RegisteredUser[]>`
-            WITH new_user AS (
-                INSERT INTO users (email, name, status)
-                VALUES (${params.email}, ${params.name}, 'PENDING')
-                RETURNING id, email, name, status, created_at AS "createdAt"
-            ),
-            new_credentials AS (
-                INSERT INTO credentials (user_id, password_hash)
-                SELECT id, ${params.passwordHash} FROM new_user
-            ),
-            new_role AS (
-                INSERT INTO user_roles (user_id, role_id)
-                SELECT new_user.id, roles.id 
-                FROM new_user, roles 
-                WHERE roles.name = 'user'
-            )
-            SELECT * FROM new_user;
-        `;
+      WITH default_role AS (
+        SELECT id FROM roles WHERE name = 'user'
+      ),
+      new_user AS (
+          INSERT INTO users (email, name, status, role_id)
+          SELECT ${params.email}, ${params.name}, 'PENDING', dr.id
+          FROM default_role dr
+          RETURNING id, email, name, status, role_id, created_at AS "createdAt"
+      )
+      SELECT 
+        nu.id,
+        nu.email,
+        nu.name,
+        nu.status,
+        r.name AS role,
+        nu."createdAt"
+      FROM new_user nu
+      JOIN roles r ON r.id = nu.role_id;
+  `;
 
     if (!newUser) {
       throw new AppError(ErrorCodes.INTERNAL, 'Failed to create user record.');
@@ -87,12 +83,14 @@ export class UserRepository {
   async findById(userId: string): Promise<RegisteredUser | null> {
     const [user] = await this.db<RegisteredUser[]>`
       SELECT
-        id,
-        email,
-        name,
-        status,
+        u.id,
+        u.email,
+        u.name,
+        u.status,
+        r.name AS role,
         created_at AS "createdAt"
       FROM users
+      LEFT JOIN roles r ON u.role_id = r.id
       WHERE id = ${userId};
     `;
 
@@ -101,15 +99,27 @@ export class UserRepository {
 
   async updateName(userId: string, name: string): Promise<RegisteredUser | null> {
     const [user] = await this.db<RegisteredUser[]>`
-      UPDATE users
-      SET name = ${name}
-      WHERE id = ${userId}
-      RETURNING
-        id,
-        email,
-        name,
-        status,
-        created_at AS "createdAt";
+      WITH updated_user AS (
+        UPDATE users
+        SET name = ${name}
+        WHERE id = ${userId}
+        RETURNING
+          id,
+          email,
+          name,
+          status,
+          role_id,
+          created_at AS "createdAt"
+      )
+      SELECT
+        u.id,
+        u.email,
+        u.name,
+        u.status,
+        r.name AS role,
+        u."createdAt"
+      FROM updated_user u
+      LEFT JOIN roles r ON r.id = u.role_id;
     `;
 
     return user ?? null;
@@ -117,15 +127,27 @@ export class UserRepository {
 
   async updateEmail(userId: string, email: string): Promise<RegisteredUser | null> {
     const [user] = await this.db<RegisteredUser[]>`
-      UPDATE users
-      SET email = ${email}
-      WHERE id = ${userId}
-      RETURNING
-        id,
-        email,
-        name,
-        status,
-        created_at AS "createdAt";
+      WITH updated_user AS (
+        UPDATE users
+        SET email = ${email}
+        WHERE id = ${userId}
+        RETURNING
+          id,
+          email,
+          name,
+          status,
+          role_id,
+          created_at AS "createdAt"
+      )
+      SELECT
+        u.id,
+        u.email,
+        u.name,
+        u.status,
+        r.name AS role,
+        u."createdAt"
+      FROM updated_user u
+      LEFT JOIN roles r ON r.id = u.role_id;
     `;
 
     return user ?? null;

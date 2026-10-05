@@ -18,10 +18,10 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "check-config": "tsx scripts/check-config.ts",
     "db:create": "goose -dir src/infrastructure/database/migrations create",
-    "db:up": "dotenv -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" up'",
-    "db:down": "dotenv -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" down'",
-    "db:status": "dotenv -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" status'",
-    "db:reset": "dotenv -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" reset'",
+    "db:up": "dotenv run -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" up'",
+    "db:down": "dotenv run -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" down'",
+    "db:status": "dotenv run -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" status'",
+    "db:reset": "dotenv run -- sh -c 'goose -dir src/infrastructure/database/migrations postgres \"$DATABASE_URL\" reset'",
     "keys:generate": "node scripts/generate-dev-keys.mjs",
     "predev": "npm run keys:generate",
     "pretest": "npm run keys:generate"
@@ -30,7 +30,7 @@
     "@bufbuild/protobuf": "^2.15.0",
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-node": "^2.2.0",
-    "@p2p-energy-trading-platform/typescript-sdk": "github:p2p-energy-trading-platform/typescript-sdk#v1.6.0",
+    "@p2p-energy-trading-platform/typescript-sdk": "github:p2p-energy-trading-platform/typescript-sdk#v1.8.0",
     "@prometheus-io/client": "^0.16.1",
     "argon2": "^0.45.1",
     "dotenv": "^18.0.3",
@@ -43,7 +43,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.3",
     "@vitest/coverage-v8": "^5.0.1",
     "dotenv-cli": "^11.0.0",
     "oxfmt": "^0.70.0",
