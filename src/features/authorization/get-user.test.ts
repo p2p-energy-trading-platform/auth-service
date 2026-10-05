@@ -13,6 +13,7 @@ describe('GetUseCase', () => {
                 email: 'user@example.com',
                 status: 'ACTIVE',
                 roles: ['user'],
+                name: 'Test User',
             }),
             
         };
@@ -26,6 +27,7 @@ describe('GetUseCase', () => {
             email: 'user@example.com',
             status: 'ACTIVE',
             roles: ['user'],
+            name: 'Test User',
         });
 
         expect(userRepo.findByIdWithRoles).toHaveBeenCalledWith('user-123');
