@@ -5,17 +5,18 @@ import type { AuthenticatedUser } from '../users/repository.js';
 
 describe('GetUseCase', () => {
 
-    it('returns user details and roles for a valid user', async () => {
+    it('returns user details and role for a valid user', async () => {
 
         const userRepo = {
 
-            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue({
+            findById: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue({
                 id: 'user-123',
                 email: 'user@example.com',
                 status: 'ACTIVE',
-                roles: ['user'],
+                role: 'user',
                 passwordHash: 'test-password-hash',
                 name: 'Test User',
+                createdAt: "2026-10-05 13:02:47.452819+05:30"
             }),
             
         };
@@ -28,11 +29,11 @@ describe('GetUseCase', () => {
             id: 'user-123',
             email: 'user@example.com',
             status: 'ACTIVE',
-            roles: ['user'],
+            role: 'user',
             name: 'Test User',
         });
 
-        expect(userRepo.findByIdWithRoles).toHaveBeenCalledWith('user-123');
+        expect(userRepo.findById).toHaveBeenCalledWith('user-123');
 
     });
 
@@ -40,7 +41,7 @@ describe('GetUseCase', () => {
     it('throws INVALID_ARGUMENT when userId is missing', async () => {
 
         const userRepo = {
-            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>(),
+            findById: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>(),
         };
 
         const useCase = new GetUseCase(userRepo as any);
@@ -53,7 +54,7 @@ describe('GetUseCase', () => {
     it('throws NOT_FOUND when the user does not exist', async () => {
 
         const userRepo = {
-            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue(null),
+            findById: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue(null),
         };
 
         const useCase = new GetUseCase(userRepo as any);
@@ -67,13 +68,14 @@ describe('GetUseCase', () => {
 
         const userRepo = {
 
-            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue({
+            findById: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue({
                 id: 'user-123',
                 email: 'user@example.com',
                 status: 'ACTIVE',
-                roles: ['user'],
+                role: 'user',
                 passwordHash: 'test-password-hash',
                 name: null,
+                createdAt: "2026-10-05 13:02:47.452819+05:30"
             }),
 
         };
@@ -86,7 +88,7 @@ describe('GetUseCase', () => {
             id: 'user-123',
             email: 'user@example.com',
             status: 'ACTIVE',
-            roles: ['user'],
+            role: 'user',
             name: null,
         });
 

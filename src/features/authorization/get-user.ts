@@ -11,7 +11,7 @@ export interface GetUserResult {
     id: string;
     email: string;
     status: string;
-    roles: string[];
+    role: string;
     name: string | null;
 }
 
@@ -29,7 +29,7 @@ export class  GetUseCase {
         }
 
 
-        const user = await this.userRepo.findByIdWithRoles(input.userId);
+        const user = await this.userRepo.findById(input.userId);
 
         if(!user){
             throw new AppError(ErrorCodes.NOT_FOUND, 'User not found');
@@ -39,7 +39,7 @@ export class  GetUseCase {
             id: user.id,
             email: user.email,
             status: user.status,
-            roles: user.roles,
+            role: user.role,
             name: user.name
         };
 

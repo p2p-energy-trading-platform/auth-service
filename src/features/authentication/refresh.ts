@@ -55,7 +55,7 @@ export class RefreshUseCase {
             throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Invalid refresh token');
         }
 
-        const user = await this.userRepo.findByIdWithRoles(session.userId);
+        const user = await this.userRepo.findById(session.userId);
 
         if(!user){
             throw new AppError(ErrorCodes.UNAUTHENTICATED, 'User not found');
@@ -69,7 +69,7 @@ export class RefreshUseCase {
         //access token
         const accessToken = await this.jwtSigner.signAccessToken({
             sub: user.id,
-            roles: user.roles,
+            role: user.role,
         });
 
 

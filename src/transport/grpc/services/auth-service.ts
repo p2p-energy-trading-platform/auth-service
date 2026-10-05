@@ -134,7 +134,7 @@ export function createAuthServiceImplementation(
           userId: result.id,
           email: result.email,
           status: result.status,
-          roles: result.roles,
+          role: result.role,
         });
       } catch (error) {
         throw toGrpcError(error);
