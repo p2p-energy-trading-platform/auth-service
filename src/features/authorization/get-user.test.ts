@@ -60,4 +60,33 @@ describe('GetUseCase', () => {
 
     });
 
+
+    it('returns null when user name is not set', async () => {
+
+        const userRepo = {
+
+            findByIdWithRoles: vi.fn().mockResolvedValue({
+                id: 'user-123',
+                email: 'user@example.com',
+                status: 'ACTIVE',
+                roles: ['user'],
+                name: null,
+            }),
+
+        };
+
+        const useCase = new GetUseCase(userRepo as any);
+
+        const result = await useCase.execute({ userId: 'user-123' });
+
+        expect(result).toEqual({
+            id: 'user-123',
+            email: 'user@example.com',
+            status: 'ACTIVE',
+            roles: ['user'],
+            name: null,
+        });
+
+    });
+
 });
