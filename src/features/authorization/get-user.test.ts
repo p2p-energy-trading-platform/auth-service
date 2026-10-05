@@ -29,7 +29,6 @@ describe('GetUseCase', () => {
             email: 'user@example.com',
             status: 'ACTIVE',
             roles: ['user'],
-            passwordHash: 'test-password-hash',
             name: 'Test User',
         });
 
@@ -88,7 +87,6 @@ describe('GetUseCase', () => {
             email: 'user@example.com',
             status: 'ACTIVE',
             roles: ['user'],
-            passwordHash: 'test-password-hash',
             name: null,
         });
 
