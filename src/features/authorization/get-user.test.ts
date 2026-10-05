@@ -41,7 +41,7 @@ describe('GetUseCase', () => {
     it('throws INVALID_ARGUMENT when userId is missing', async () => {
 
         const userRepo = {
-            findByIdWithRoles: vi.fn(),
+            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>(),
         };
 
         const useCase = new GetUseCase(userRepo as any);
@@ -54,7 +54,7 @@ describe('GetUseCase', () => {
     it('throws NOT_FOUND when the user does not exist', async () => {
 
         const userRepo = {
-            findByIdWithRoles: vi.fn().mockResolvedValue(null),
+            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue(null),
         };
 
         const useCase = new GetUseCase(userRepo as any);

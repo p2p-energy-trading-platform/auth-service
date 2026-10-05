@@ -7,7 +7,7 @@ describe('CheckPermissionUseCase', () => {
     it('returns allowed true when user has permission', async () => {
 
         const authorizationRepo = {
-            hasPermission: vi.fn().mockResolvedValue(true),
+            hasPermission: vi.fn<(userId: string, permissionName: string) => Promise<boolean>>().mockResolvedValue(true),
         };
 
         const useCase = new CheckPermissionUseCase(authorizationRepo as any);
@@ -31,7 +31,7 @@ describe('CheckPermissionUseCase', () => {
     it('returns allowed false when user does not have permission', async () => {
 
         const authorizationRepo = {
-            hasPermission: vi.fn().mockResolvedValue(false),
+            hasPermission: vi.fn<(userId: string, permissionName: string) => Promise<boolean>>().mockResolvedValue(false),
         };
 
         const useCase = new CheckPermissionUseCase(authorizationRepo as any);
@@ -55,7 +55,7 @@ describe('CheckPermissionUseCase', () => {
     it('throws INVALID_ARGUMENT when userId is missing', async () => {
 
         const authorizationRepo = {
-            hasPermission: vi.fn(),
+            hasPermission: vi.fn<(userId: string, permissionName: string) => Promise<boolean>>(),
         };
 
         const useCase = new CheckPermissionUseCase(authorizationRepo as any);
@@ -74,7 +74,7 @@ describe('CheckPermissionUseCase', () => {
     it('throws INVALID_ARGUMENT when permissionName is missing', async () => {
 
         const authorizationRepo = {
-            hasPermission: vi.fn(),
+            hasPermission: vi.fn<(userId: string, permissionName: string) => Promise<boolean>>(),
         };
 
         const useCase = new CheckPermissionUseCase(authorizationRepo as any);
