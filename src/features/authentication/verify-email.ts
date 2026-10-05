@@ -1,11 +1,11 @@
-import { AppError } from "../../errors/app-error.js";
-import { ErrorCodes } from "../../errors/codes.js";
-import type { OTPRepository } from "../../infrastructure/redis/otp-repository.js";
-import type { UserRepository } from "../users/repository.js";
+import { AppError } from '../../errors/app-error.js';
+import { ErrorCodes } from '../../errors/codes.js';
+import type { OTPRepository } from '../../infrastructure/redis/otp-repository.js';
+import type { UserRepository } from '../users/repository.js';
 
 interface VerifyEmailInput {
-    email: string;
-    otp: string;
+  email: string;
+  otp: string;
 }
 
 export class VerifyEmailUseCase {
@@ -38,7 +38,10 @@ export class VerifyEmailUseCase {
     const { isExceeded } = await this.otpRepo.incrementAttempts(normalizedEmail);
     if (isExceeded) {
       await this.otpRepo.deleteOtp(normalizedEmail);
-      throw new AppError(ErrorCodes.RATE_LIMITED, 'Too many invalid attempts. Please request a new OTP.');
+      throw new AppError(
+        ErrorCodes.RATE_LIMITED,
+        'Too many invalid attempts. Please request a new OTP.',
+      );
     }
 
     if (storedOtp !== input.otp.trim()) {

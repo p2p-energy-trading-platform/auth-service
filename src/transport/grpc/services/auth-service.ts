@@ -329,12 +329,12 @@ export function createAuthServiceImplementation(
       try {
         await deps.verifyEmailUseCase.execute({
           email: req.email,
-          otp: req.otp
+          otp: req.otp,
         });
 
         return create(VerifyEmailResponseSchema, {
           success: true,
-          message: "Email verified successfully",
+          message: 'Email verified successfully',
         });
       } catch (error) {
         throw toGrpcError(error);
@@ -345,11 +345,11 @@ export function createAuthServiceImplementation(
       try {
         await deps.resendOtpUseCase.execute(req.email);
         return create(ResendOtpResponseSchema, {
-          success: true
+          success: true,
         });
       } catch (error) {
         throw toGrpcError(error);
       }
-    }
+    },
   };
 }

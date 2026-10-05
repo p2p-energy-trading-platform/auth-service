@@ -42,7 +42,7 @@ export default fp(async (fastify) => {
     userRepository,
     passwordHasher,
     emailProvider,
-    otpRepository
+    otpRepository,
   );
 
   const loginUseCase = new LoginUseCase(

@@ -5,14 +5,16 @@ import type { TemporaryTokenStore } from '../../infrastructure/redis/temporary-t
 
 describe('RequestEmailChangeUseCase', () => {
   const userRepo = {
-    findByEmail: vi.fn<(email: string) => Promise<{
+    findByEmail: vi.fn<
+      (email: string) => Promise<{
         id: string;
         email: string;
         name: string | null;
         status: string;
         createdAt: string;
         role: string;
-      } | null>>(),
+      } | null>
+    >(),
     findById: vi.fn<
       (userId: string) => Promise<{
         id: string;
@@ -141,7 +143,7 @@ describe('RequestEmailChangeUseCase', () => {
       name: null,
       status: '',
       createdAt: '',
-      role: ''
+      role: '',
     });
 
     await expect(
@@ -182,7 +184,7 @@ describe('RequestEmailChangeUseCase', () => {
       name: null,
       status: '',
       createdAt: '',
-      role: ''
+      role: '',
     });
     userRepo.findById.mockResolvedValue(currentUser);
 

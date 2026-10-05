@@ -163,7 +163,7 @@ describe('VerifyEmailChangeUseCase', () => {
       name: null,
       status: '',
       role: '',
-      createdAt: ''
+      createdAt: '',
     });
 
     await expect(

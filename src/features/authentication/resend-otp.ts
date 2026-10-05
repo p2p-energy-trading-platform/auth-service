@@ -1,9 +1,9 @@
-import { randomInt } from "node:crypto";
-import { AppError } from "../../errors/app-error.js";
-import { ErrorCodes } from "../../errors/codes.js";
-import type { EmailProvider } from "../../infrastructure/email/provider.js";
-import type { OTPRepository } from "../../infrastructure/redis/otp-repository.js";
-import type { UserRepository } from "../users/repository.js";
+import { randomInt } from 'node:crypto';
+import { AppError } from '../../errors/app-error.js';
+import { ErrorCodes } from '../../errors/codes.js';
+import type { EmailProvider } from '../../infrastructure/email/provider.js';
+import type { OTPRepository } from '../../infrastructure/redis/otp-repository.js';
+import type { UserRepository } from '../users/repository.js';
 
 export class ResendOtpUseCase {
   constructor(
@@ -31,7 +31,10 @@ export class ResendOtpUseCase {
     // Rate limiting check
     const canResend = await this.otpRepo.setResendCooldown(normalizedEmail, 60);
     if (!canResend) {
-      throw new AppError(ErrorCodes.RATE_LIMITED, 'Please wait 60 seconds before requesting a new OTP');
+      throw new AppError(
+        ErrorCodes.RATE_LIMITED,
+        'Please wait 60 seconds before requesting a new OTP',
+      );
     }
 
     const otp = randomInt(100000, 1000000).toString();
