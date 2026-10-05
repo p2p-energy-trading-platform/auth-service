@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GetUseCase } from './get-user.js';
+import type { AuthenticatedUser } from '../users/repository.js';
 
 
 describe('GetUseCase', () => {
@@ -8,11 +9,12 @@ describe('GetUseCase', () => {
 
         const userRepo = {
 
-            findByIdWithRoles: vi.fn().mockResolvedValue({
+            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue({
                 id: 'user-123',
                 email: 'user@example.com',
                 status: 'ACTIVE',
                 roles: ['user'],
+                passwordHash: 'test-password-hash',
                 name: 'Test User',
             }),
             
@@ -27,6 +29,7 @@ describe('GetUseCase', () => {
             email: 'user@example.com',
             status: 'ACTIVE',
             roles: ['user'],
+            passwordHash: 'test-password-hash',
             name: 'Test User',
         });
 
@@ -65,11 +68,12 @@ describe('GetUseCase', () => {
 
         const userRepo = {
 
-            findByIdWithRoles: vi.fn().mockResolvedValue({
+            findByIdWithRoles: vi.fn<(userId: string) => Promise<AuthenticatedUser | null>>().mockResolvedValue({
                 id: 'user-123',
                 email: 'user@example.com',
                 status: 'ACTIVE',
                 roles: ['user'],
+                passwordHash: 'test-password-hash',
                 name: null,
             }),
 
@@ -84,6 +88,7 @@ describe('GetUseCase', () => {
             email: 'user@example.com',
             status: 'ACTIVE',
             roles: ['user'],
+            passwordHash: 'test-password-hash',
             name: null,
         });
 
