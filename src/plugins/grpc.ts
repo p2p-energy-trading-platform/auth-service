@@ -8,20 +8,18 @@ import { RegisterUseCase } from '../features/authentication/register.js';
 import { LoginUseCase } from '../features/authentication/login.js';
 import { LogoutUseCase } from '../features/authentication/logout.js';
 import { LogoutAllUseCase } from '../features/authentication/logout-all.js';
-<<<<<<< HEAD
 import { AuthorizationRepository } from '../features/authorization/repository.js';
 import { GetUseCase } from '../features/authorization/get-user.js';
 import { CheckPermissionUseCase } from '../features/authorization/check-permission.js';
-=======
 import { GetProfileUseCase } from '../features/users/get-profile.js';
 import { UpdateProfileUseCase } from '../features/users/update-profile.js';
 import { ChangePasswordUseCase } from '../features/authentication/change-password.js';
 import { RequestPasswordResetUseCase } from '../features/authentication/request-password-reset.js';
 import { RequestEmailChangeUseCase } from '../features/authentication/request-email-change.js';
 import { ResetPasswordUseCase } from '../features/authentication/reset-password.js';
+import { VerifyEmailChangeUseCase } from '../features/authentication/verify-email-change.js';
 import { RedisTemporaryTokenStore } from '../infrastructure/redis/temporary-token-store.js';
 import { MailtrapEmailProvider } from '../infrastructure/email/mailtrap-provider.js';
->>>>>>> 05f8a4216af6ed6cceea364c23de944a188dc90f
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
@@ -83,6 +81,10 @@ export default fp(async (fastify) => {
 
   const getUserUseCase = new GetUseCase(userRepository);
   const checkPermissionUseCase = new CheckPermissionUseCase(authorizationRepository);
+  const verifyEmailChangeUseCase = new VerifyEmailChangeUseCase(
+    userRepository,
+    temporaryTokenStore,
+  );
 
   const grpcServer = new GrpcServer({
     config: fastify.config,
@@ -98,6 +100,7 @@ export default fp(async (fastify) => {
     resetPasswordUseCase,
     getUserUseCase,
     checkPermissionUseCase,
+    verifyEmailChangeUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);

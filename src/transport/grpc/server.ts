@@ -14,10 +14,11 @@ import { GetProfileUseCase } from '../../features/users/get-profile.js';
 import { UpdateProfileUseCase } from '../../features/users/update-profile.js';
 import { ChangePasswordUseCase } from '../../features/authentication/change-password.js';
 import { RequestPasswordResetUseCase } from '../../features/authentication/request-password-reset.js';
-import { ResetPasswordUseCase } from '../../features/authentication/reset-password.js';
 import { RequestEmailChangeUseCase } from '../../features/authentication/request-email-change.js';
 import { GetUseCase } from '../../features/authorization/get-user.js';
 import { CheckPermissionUseCase } from '../../features/authorization/check-permission.js';
+import { ResetPasswordUseCase } from '../../features/authentication/reset-password.js';
+import { VerifyEmailChangeUseCase } from '../../features/authentication/verify-email-change.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
@@ -33,6 +34,7 @@ export interface GrpcServerDependencies {
   resetPasswordUseCase: ResetPasswordUseCase;
   checkPermissionUseCase: CheckPermissionUseCase;
   getProfileUseCase: GetProfileUseCase;
+  verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
 }
 
 export class GrpcServer {
@@ -63,6 +65,7 @@ export class GrpcServer {
         resetPasswordUseCase: this.deps.resetPasswordUseCase,
         getProfileUseCase: this.deps.getProfileUseCase,
         updateProfileUseCase: this.deps.updateProfileUseCase,
+        verifyEmailChangeUseCase: this.deps.verifyEmailChangeUseCase,
       }),
     );
   }
