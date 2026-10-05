@@ -19,6 +19,7 @@ export interface RegisteredUser {
 export interface AuthenticatedUser {
   id: string;
   email: string;
+  name: string | null;
   status: string;
   passwordHash: string;
   roles: string[];
@@ -90,6 +91,7 @@ export class UserRepository {
 
       SELECT u.id, 
              u.email, 
+             u.name,
              u.status,
              c.password_hash AS "passwordHash",
              COALESCE(
@@ -101,7 +103,7 @@ export class UserRepository {
              LEFT JOIN user_roles ur ON ur.user_id = u.id
              LEFT JOIN roles r ON r.id = ur.role_id
              WHERE u.id = ${userId}
-             GROUP BY u.id, u.email, u.status, c.password_hash;
+             GROUP BY u.id, u.email, u.name, u.status, c.password_hash;
 
     `
 

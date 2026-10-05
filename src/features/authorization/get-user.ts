@@ -12,6 +12,7 @@ export interface GetUserResult {
     email: string;
     status: string;
     roles: string[];
+    name: string | null;
 }
 
 
@@ -38,7 +39,8 @@ export class  GetUseCase {
             id: user.id,
             email: user.email,
             status: user.status,
-            roles: user.roles
+            roles: user.roles,
+            name: user.name
         };
 
     }
