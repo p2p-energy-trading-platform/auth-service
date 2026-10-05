@@ -49,6 +49,22 @@ The API Gateway communicates with Auth Service over gRPC and retrieves JWKS over
 
 NOTE: The Gateway verifies access-token signatures locally. It does **not** send every incoming request to Auth Service just to verify a JWT.
 
+## 1.1 Onboarding and KYC
+
+Onboarding state is persisted with one of `NOT_REQUIRED`, `PENDING`, `VERIFIED`,
+or `REJECTED`. KYC submissions store the customer's full name, date of birth,
+Dubai ID, and uploaded document path in PostgreSQL.
+
+The onboarding state machine only permits these transitions:
+
+- `NOT_REQUIRED` -> `PENDING`
+- `PENDING` -> `VERIFIED` or `REJECTED`
+- `REJECTED` -> `PENDING` for resubmission
+
+Verification is owned by a separate service. Auth Service stores the submission
+and state; transport/RPC integration is intentionally separate from this
+persistence logic.
+
 ## 2. Repository structure
 
 The service follows a feature/infrastructure/transport split:
