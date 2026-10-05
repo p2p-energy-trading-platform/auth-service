@@ -8,6 +8,8 @@ interface CreateUserParams {
   name: string;
 }
 
+export type UserStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'DISABLED';
+
 export interface RegisteredUser {
   id: string;
   email: string;
@@ -24,12 +26,22 @@ export interface AuthenticatedUser extends RegisteredUser {
 export class UserRepository {
   constructor(private readonly db: DbClient) {}
 
-  async findByEmail(email: string): Promise<{ id: string } | null> {
-    const [user] = await this.db<{ id: string }[]>`
-            SELECT id FROM users WHERE LOWER(email) = LOWER(${email});       
+  async findByEmail(email: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
+           SELECT
+            u.id,
+            u.email,
+            u.name,
+            u.status,
+            r.name AS role,
+            u.created_at AS "createdAt",
+          FROM users u
+          INNER JOIN credentials c ON c.user_id = u.id
+          LEFT JOIN roles r ON r.id = u.role_id
+          WHERE LOWER(u.email) = LOWER(${email});      
         `;
 
-    return user || null;
+    return user ?? null;
   }
 
   async findByEmailWithCredentials(email: string): Promise<AuthenticatedUser | null> {
@@ -151,6 +163,16 @@ export class UserRepository {
     `;
 
     return user ?? null;
+  }
+
+  async updateStatus(userId: string, status: UserStatus): Promise<boolean> {
+    const result = await this.db`
+      UPDATE users
+      SET status = ${status}
+      WHERE id = ${userId};
+    `;
+
+    return result.count > 1;
   }
 
   async findPasswordHashById(userId: string): Promise<string | null> {

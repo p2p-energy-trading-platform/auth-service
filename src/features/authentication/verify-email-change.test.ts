@@ -159,6 +159,11 @@ describe('VerifyEmailChangeUseCase', () => {
     userRepo.findById.mockResolvedValue(user);
     userRepo.findByEmail.mockResolvedValue({
       id: 'another-user',
+      email: '',
+      name: null,
+      status: '',
+      role: '',
+      createdAt: ''
     });
 
     await expect(
