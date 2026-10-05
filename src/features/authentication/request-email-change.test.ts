@@ -5,7 +5,16 @@ import type { TemporaryTokenStore } from '../../infrastructure/redis/temporary-t
 
 describe('RequestEmailChangeUseCase', () => {
   const userRepo = {
-    findByEmail: vi.fn<(email: string) => Promise<{ id: string } | null>>(),
+    findByEmail: vi.fn<
+      (email: string) => Promise<{
+        id: string;
+        email: string;
+        name: string | null;
+        status: string;
+        createdAt: string;
+        role: string;
+      } | null>
+    >(),
     findById: vi.fn<
       (userId: string) => Promise<{
         id: string;
@@ -130,6 +139,11 @@ describe('RequestEmailChangeUseCase', () => {
   it('rejects when the new email is already used by another user', async () => {
     userRepo.findByEmail.mockResolvedValue({
       id: 'another-user',
+      email: '',
+      name: null,
+      status: '',
+      createdAt: '',
+      role: '',
     });
 
     await expect(
@@ -166,6 +180,11 @@ describe('RequestEmailChangeUseCase', () => {
   it('rejects when the new email is the current email', async () => {
     userRepo.findByEmail.mockResolvedValue({
       id: 'user-123',
+      email: '',
+      name: null,
+      status: '',
+      createdAt: '',
+      role: '',
     });
     userRepo.findById.mockResolvedValue(currentUser);
 
