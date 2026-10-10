@@ -363,6 +363,6 @@ export function createAuthServiceImplementation(
       } catch (error) {
         throw toGrpcError(error);
       }
-    }
+    },
   };
 }

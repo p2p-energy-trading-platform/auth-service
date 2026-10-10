@@ -19,7 +19,7 @@ export class MailtrapEmailProvider implements EmailProvider {
     this.client = new MailtrapClient({
       token: options.apiKey,
       sandbox: true,
-      testInboxId: options.textInboxId
+      testInboxId: options.textInboxId,
     });
 
     this.from = {
