@@ -73,6 +73,12 @@ export class UserRepository {
           SELECT ${params.email}, ${params.name}, 'PENDING', dr.id
           FROM default_role dr
           RETURNING id, email, name, status, role_id, created_at AS "createdAt"
+      ),
+      new_credentials AS (
+        INSERT INTO credentials (user_id, password_hash)
+        SELECT id, ${params.passwordHash}
+        FROM new_user
+        RETURNING user_id
       )
       SELECT 
         nu.id,
