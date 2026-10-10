@@ -5,6 +5,7 @@ export interface MailtrapProviderOptions {
   apiKey: string;
   fromEmail: string;
   fromName: string;
+  textInboxId: number;
 }
 
 export class MailtrapEmailProvider implements EmailProvider {
@@ -17,6 +18,8 @@ export class MailtrapEmailProvider implements EmailProvider {
   constructor(options: MailtrapProviderOptions) {
     this.client = new MailtrapClient({
       token: options.apiKey,
+      sandbox: true,
+      testInboxId: options.textInboxId
     });
 
     this.from = {
