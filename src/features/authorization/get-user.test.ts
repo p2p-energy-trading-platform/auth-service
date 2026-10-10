@@ -12,7 +12,7 @@ describe('GetUseCase', () => {
         role: 'user',
         passwordHash: 'test-password-hash',
         name: 'Test User',
-        createdAt: '2026-10-05 13:02:47.452819+05:30',
+        createdAt: new Date('2026-10-05T13:02:47.452Z'),
       }),
     };
 
@@ -66,7 +66,7 @@ describe('GetUseCase', () => {
         role: 'user',
         passwordHash: 'test-password-hash',
         name: null,
-        createdAt: '2026-10-05 13:02:47.452819+05:30',
+        createdAt: new Date('2026-10-05T13:02:47.452Z'),
       }),
     };
 

@@ -34,6 +34,7 @@ import {
   ResendOtpResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
 import type { CheckPermissionUseCase } from '../../../features/authorization/check-permission.js';
 import type { GetUseCase } from '../../../features/authorization/get-user.js';
 import type { RefreshUseCase } from '../../../features/authentication/refresh.js';
@@ -74,7 +75,8 @@ export function createAuthServiceImplementation(
           userId: user.id,
           email: user.email,
           status: user.status,
-          createdAt: user.createdAt,
+          createdAt: user.createdAt.toISOString(),
+          createdAtTime: timestampFromDate(user.createdAt),
         });
       } catch (error) {
         throw toGrpcError(error);
@@ -184,7 +186,8 @@ export function createAuthServiceImplementation(
             email: profile.email,
             name: profile.name ?? '',
             status: profile.status,
-            createdAt: profile.createdAt,
+            createdAt: profile.createdAt.toISOString(),
+            createdAtTime: timestampFromDate(profile.createdAt),
           },
         });
       } catch (error) {
@@ -225,7 +228,8 @@ export function createAuthServiceImplementation(
             email: profile.email,
             name: profile.name ?? '',
             status: profile.status,
-            createdAt: profile.createdAt,
+            createdAt: profile.createdAt.toISOString(),
+            createdAtTime: timestampFromDate(profile.createdAt),
           },
         });
       } catch (error) {
@@ -317,7 +321,8 @@ export function createAuthServiceImplementation(
             email: profile.email,
             name: profile.name ?? '',
             status: profile.status,
-            createdAt: profile.createdAt,
+            createdAt: profile.createdAt.toISOString(),
+            createdAtTime: timestampFromDate(profile.createdAt),
           },
         });
       } catch (error) {
@@ -347,6 +352,14 @@ export function createAuthServiceImplementation(
         return create(ResendOtpResponseSchema, {
           success: true,
         });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
+
+    submitKyc: async (_req, _context) => {
+      try {
+        throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'submit kyc is not implemented');
       } catch (error) {
         throw toGrpcError(error);
       }

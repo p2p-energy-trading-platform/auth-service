@@ -18,6 +18,7 @@ describe('MailtrapEmailProvider', () => {
       apiKey: 'test-api-key',
       fromEmail: 'noreply@example.com',
       fromName: 'GridX',
+      textInboxId: 13232,
     });
 
     await provider.send({
@@ -46,6 +47,7 @@ describe('MailtrapEmailProvider', () => {
       apiKey: 'test-api-key',
       fromEmail: 'noreply@example.com',
       fromName: 'GridX',
+      textInboxId: 13232,
     });
 
     await provider.send({
@@ -72,6 +74,7 @@ describe('MailtrapEmailProvider', () => {
       apiKey: 'test-api-key',
       fromEmail: 'noreply@example.com',
       fromName: 'GridX',
+      textInboxId: 13232,
     });
 
     await expect(

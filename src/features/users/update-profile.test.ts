@@ -7,7 +7,7 @@ interface MockUser {
   email: string;
   name: string | null;
   status: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 type UpdateName = (userId: string, name: string) => Promise<MockUser | null>;
@@ -20,7 +20,7 @@ describe('UpdateProfileUseCase', () => {
         email: 'user@example.com',
         name: 'John Doe',
         status: 'ACTIVE',
-        createdAt: '2026-10-03T00:00:00.000Z',
+        createdAt: new Date('2026-10-03T00:00:00.000Z'),
       }),
     };
 
@@ -36,7 +36,7 @@ describe('UpdateProfileUseCase', () => {
       email: 'user@example.com',
       name: 'John Doe',
       status: 'ACTIVE',
-      createdAt: '2026-10-03T00:00:00.000Z',
+      createdAt: new Date('2026-10-03T00:00:00.000Z'),
     });
 
     expect(users.updateName).toHaveBeenCalledWith('user-123', 'John Doe');
