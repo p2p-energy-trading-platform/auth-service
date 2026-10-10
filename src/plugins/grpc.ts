@@ -24,11 +24,13 @@ import { RefreshUseCase } from '../features/authentication/refresh.js';
 import { OTPRepository } from '../infrastructure/redis/otp-repository.js';
 import { VerifyEmailUseCase } from '../features/authentication/verify-email.js';
 import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
+import { LoginAttemptRepository } from '../infrastructure/redis/login-attempt-repository.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
   const authorizationRepository = new AuthorizationRepository(fastify.db);
   const sessionRepository = new SessionRepository(fastify.db, fastify.redis);
+  const loginAttemptRepository = new LoginAttemptRepository(fastify.redis);
   const passwordHasher = new PasswordHasher();
   const otpRepository = new OTPRepository(fastify.redis);
 
@@ -50,6 +52,7 @@ export default fp(async (fastify) => {
     passwordHasher,
     fastify.jwtSigner,
     sessionRepository,
+    loginAttemptRepository,
     fastify.config.AUTH_ACCESS_TOKEN_TTL_SECONDS,
     fastify.config.AUTH_REFRESH_TOKEN_TTL_SECONDS,
   );

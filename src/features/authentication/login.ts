@@ -4,6 +4,7 @@ import { ErrorCodes } from '../../errors/codes.js';
 import type { JwtSigner } from '../../infrastructure/crypto/jwt-signer.js';
 import { hashOpaqueToken } from '../../infrastructure/crypto/token-hasher.js';
 import type { PasswordHasher } from '../../infrastructure/crypto/password-hasher.js';
+import type { LoginAttemptRepository } from '../../infrastructure/redis/login-attempt-repository.js';
 import type { SessionRepository } from '../sessions/repository.js';
 import type { UserRepository } from '../users/repository.js';
 
@@ -26,6 +27,7 @@ export class LoginUseCase {
     private readonly passwordHasher: PasswordHasher,
     private readonly jwtSigner: JwtSigner,
     private readonly sessionRepo: SessionRepository,
+    private readonly loginAttemptRepo: LoginAttemptRepository,
     private readonly accessTokenTtlSeconds: number,
     private readonly refreshTokenTtlSeconds: number,
   ) {}
@@ -37,21 +39,41 @@ export class LoginUseCase {
 
     const normalizedEmail = input.email.trim().toLowerCase();
 
+    // Stop processing login attempts when the limit is reached.
+    if (await this.loginAttemptRepo.isLimited(normalizedEmail)) {
+
+      throw new AppError(
+        ErrorCodes.RATE_LIMITED,
+        'Too many failed login attempts. Please try again later.',
+        429,
+      );
+
+    }
+
     const user = await this.userRepo.findByEmailWithCredentials(normalizedEmail);
 
     if (!user) {
+
+      await this.loginAttemptRepo.recordFailure(normalizedEmail);
       throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Invalid email or password');
+
     }
 
     const passwordValid = await this.passwordHasher.verify(user.passwordHash, input.password);
 
     if (!passwordValid) {
+
+      await this.loginAttemptRepo.recordFailure(normalizedEmail);
       throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Invalid email or password');
+
     }
 
     if (user.status !== 'ACTIVE') {
       throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Account is not active');
     }
+
+    // Clear failed login attempts after successful authentication.
+    await this.loginAttemptRepo.reset(normalizedEmail);
 
     const accessToken = await this.jwtSigner.signAccessToken({
       sub: user.id,
