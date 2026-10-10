@@ -41,4 +41,42 @@ describe('KeyService', () => {
 
     });
 
+    
+    it('publishes the current and previous public keys through JWKS', () => {
+        
+        const currentPublicJwk = {
+            kty: 'OKP',
+            crv: 'Ed25519',
+            x: 'current-public-key',
+            kid: 'gridx-current-key',
+            alg: 'EdDSA',
+            use: 'sig',
+            key_ops: ['verify'],
+        };
+
+        const previousPublicJwk = {
+            kty: 'OKP',
+            crv: 'Ed25519',
+            x: 'previous-public-key',
+            kid: 'gridx-previous-key',
+            alg: 'EdDSA',
+            use: 'sig',
+            key_ops: ['verify'],
+        };
+
+        const keyProvider = {
+            publicJwk: currentPublicJwk,
+        } as unknown as KeyProvider;
+
+        const keyService = new KeyService(
+            keyProvider,
+            [previousPublicJwk],
+        );
+
+        expect(keyService.getJwks()).toEqual({
+            keys: [currentPublicJwk, previousPublicJwk],
+        });
+        
+    });
+
 });
