@@ -31,7 +31,7 @@ export class ResetPasswordUseCase {
       throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Password must be at least 8 characters');
     }
 
-    const userId = await this.temporaryTokenStore.get('password-reset', input.token);
+    const userId = await this.temporaryTokenStore.consume('password-reset', input.token);
 
     if (!userId) {
       throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Invalid or expired password reset token');
@@ -44,8 +44,6 @@ export class ResetPasswordUseCase {
     if (!updated) {
       throw new AppError(ErrorCodes.INTERNAL, 'Failed to update password');
     }
-
-    await this.temporaryTokenStore.delete('password-reset', input.token);
 
     await this.sessionRepo.revokeAllByUserId(userId);
 

@@ -43,7 +43,11 @@ export const envSchema = z.object({
   MAILTRAP_API_KEY: z.string().min(1),
   MAILTRAP_FROM_EMAIL: z.string().email(),
   MAILTRAP_FROM_NAME: z.string().min(1),
-  MAILTRAP_INBOX_ID: z.coerce.number().int().positive(),
+  MAILTRAP_SANDBOX: booleanFromEnv,
+  MAILTRAP_INBOX_ID: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.coerce.number().int().positive().optional(),
+  ),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 

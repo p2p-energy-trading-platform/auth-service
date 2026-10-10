@@ -11,11 +11,10 @@ describe('ResetPasswordUseCase', () => {
   };
 
   const temporaryTokenStore = {
-    get: vi.fn<
-      (purpose: 'password-reset' | 'email-verification', token: string) => Promise<string | null>
-    >(),
-    delete:
-      vi.fn<(purpose: 'password-reset' | 'email-verification', token: string) => Promise<void>>(),
+    consume:
+      vi.fn<
+        (purpose: 'password-reset' | 'email-verification', token: string) => Promise<string | null>
+      >(),
   };
 
   const sessionRepo = {
@@ -31,10 +30,9 @@ describe('ResetPasswordUseCase', () => {
     );
 
   it('resets the password, deletes the token, and revokes all sessions', async () => {
-    temporaryTokenStore.get.mockResolvedValue('user-123');
+    temporaryTokenStore.consume.mockResolvedValue('user-123');
     passwordHasher.hash.mockResolvedValue('new-password-hash');
     userRepo.updatePasswordHash.mockResolvedValue(true);
-    temporaryTokenStore.delete.mockResolvedValue(undefined);
     sessionRepo.revokeAllByUserId.mockResolvedValue(true);
 
     const result = await createUseCase().execute({
@@ -44,13 +42,11 @@ describe('ResetPasswordUseCase', () => {
 
     expect(result).toEqual({ success: true });
 
-    expect(temporaryTokenStore.get).toHaveBeenCalledWith('password-reset', 'reset-token-123');
+    expect(temporaryTokenStore.consume).toHaveBeenCalledWith('password-reset', 'reset-token-123');
 
     expect(passwordHasher.hash).toHaveBeenCalledWith('new-password');
 
     expect(userRepo.updatePasswordHash).toHaveBeenCalledWith('user-123', 'new-password-hash');
-
-    expect(temporaryTokenStore.delete).toHaveBeenCalledWith('password-reset', 'reset-token-123');
 
     expect(sessionRepo.revokeAllByUserId).toHaveBeenCalledWith('user-123');
   });
@@ -65,7 +61,7 @@ describe('ResetPasswordUseCase', () => {
       code: 'INVALID_ARGUMENT',
     });
 
-    expect(temporaryTokenStore.get).not.toHaveBeenCalled();
+    expect(temporaryTokenStore.consume).not.toHaveBeenCalled();
   });
 
   it('rejects a missing new password', async () => {
@@ -78,7 +74,7 @@ describe('ResetPasswordUseCase', () => {
       code: 'INVALID_ARGUMENT',
     });
 
-    expect(temporaryTokenStore.get).not.toHaveBeenCalled();
+    expect(temporaryTokenStore.consume).not.toHaveBeenCalled();
   });
 
   it('rejects a password shorter than 8 characters', async () => {
@@ -91,11 +87,11 @@ describe('ResetPasswordUseCase', () => {
       code: 'INVALID_ARGUMENT',
     });
 
-    expect(temporaryTokenStore.get).not.toHaveBeenCalled();
+    expect(temporaryTokenStore.consume).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid or expired reset token', async () => {
-    temporaryTokenStore.get.mockResolvedValue(null);
+    temporaryTokenStore.consume.mockResolvedValue(null);
 
     await expect(
       createUseCase().execute({
@@ -108,12 +104,11 @@ describe('ResetPasswordUseCase', () => {
 
     expect(passwordHasher.hash).not.toHaveBeenCalled();
     expect(userRepo.updatePasswordHash).not.toHaveBeenCalled();
-    expect(temporaryTokenStore.delete).not.toHaveBeenCalled();
     expect(sessionRepo.revokeAllByUserId).not.toHaveBeenCalled();
   });
 
-  it('does not consume the token when the password update fails', async () => {
-    temporaryTokenStore.get.mockResolvedValue('user-123');
+  it('rejects if the password update fails after consuming the token', async () => {
+    temporaryTokenStore.consume.mockResolvedValue('user-123');
     passwordHasher.hash.mockResolvedValue('new-password-hash');
     userRepo.updatePasswordHash.mockResolvedValue(false);
 
@@ -126,15 +121,12 @@ describe('ResetPasswordUseCase', () => {
       code: 'INTERNAL',
     });
 
-    expect(temporaryTokenStore.delete).not.toHaveBeenCalled();
+    expect(temporaryTokenStore.consume).toHaveBeenCalledTimes(1);
     expect(sessionRepo.revokeAllByUserId).not.toHaveBeenCalled();
   });
 
-  it('does not revoke sessions if token deletion fails', async () => {
-    temporaryTokenStore.get.mockResolvedValue('user-123');
-    passwordHasher.hash.mockResolvedValue('new-password-hash');
-    userRepo.updatePasswordHash.mockResolvedValue(true);
-    temporaryTokenStore.delete.mockRejectedValue(new Error('Redis unavailable'));
+  it('does not update the password if token consumption fails', async () => {
+    temporaryTokenStore.consume.mockRejectedValue(new Error('Redis unavailable'));
 
     await expect(
       createUseCase().execute({
@@ -143,6 +135,8 @@ describe('ResetPasswordUseCase', () => {
       }),
     ).rejects.toThrow('Redis unavailable');
 
+    expect(passwordHasher.hash).not.toHaveBeenCalled();
+    expect(userRepo.updatePasswordHash).not.toHaveBeenCalled();
     expect(sessionRepo.revokeAllByUserId).not.toHaveBeenCalled();
   });
 });
