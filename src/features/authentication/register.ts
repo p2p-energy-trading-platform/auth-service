@@ -7,6 +7,7 @@ import type { EmailProvider } from '../../infrastructure/email/provider.js';
 import type { OTPRepository } from '../../infrastructure/redis/otp-repository.js';
 
 interface RegisterInput {
+  name: string;
   email: string;
   password: string;
 }
@@ -28,6 +29,16 @@ export class RegisterUseCase {
       throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Invalid Password');
     }
 
+    const name = input.name.trim();
+
+    if (!name) {
+      throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Name is required');
+    }
+
+    if (name.length > 100) {
+      throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Name must not exceed 100 characters');
+    }
+
     const normalizedEmail = input.email.trim().toLowerCase();
 
     const existingUser = await this.userRepo.findByEmail(normalizedEmail);
@@ -36,7 +47,6 @@ export class RegisterUseCase {
     }
 
     const passwordHash = await this.passwordHasher.hash(input.password);
-    const name = `user${randomInt(1000, 10000)}`;
 
     try {
       const user = await this.userRepo.createUsersWithCredentials({
