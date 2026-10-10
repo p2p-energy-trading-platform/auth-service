@@ -24,6 +24,8 @@ import { RefreshUseCase } from '../features/authentication/refresh.js';
 import { OTPRepository } from '../infrastructure/redis/otp-repository.js';
 import { VerifyEmailUseCase } from '../features/authentication/verify-email.js';
 import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
+import { KycRepository } from '../features/onboarding/repository.js';
+import { SubmitKycUseCase } from '../features/onboarding/submit-kyc.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
@@ -106,6 +108,8 @@ export default fp(async (fastify) => {
 
   const verifyEmailUseCase = new VerifyEmailUseCase(userRepository, otpRepository);
   const resendOtpUseCase = new ResendOtpUseCase(userRepository, emailProvider, otpRepository);
+  const kycRepository = new KycRepository(fastify.db);
+  const submitKycUseCase = new SubmitKycUseCase(kycRepository);
 
   const grpcServer = new GrpcServer({
     config: fastify.config,
@@ -125,6 +129,7 @@ export default fp(async (fastify) => {
     verifyEmailChangeUseCase,
     verifyEmailUseCase,
     resendOtpUseCase,
+    submitKycUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);

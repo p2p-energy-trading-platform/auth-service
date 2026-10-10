@@ -13,6 +13,7 @@ import type { RequestPasswordResetUseCase } from '../../../features/authenticati
 import type { ResetPasswordUseCase } from '../../../features/authentication/reset-password.js';
 import type { RequestEmailChangeUseCase } from '../../../features/authentication/request-email-change.js';
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
+import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
 
 import {
   AuthService,
@@ -32,8 +33,13 @@ import {
   RefreshTokenResponseSchema,
   VerifyEmailResponseSchema,
   ResendOtpResponseSchema,
+  SubmitKycResponseSchema,
+  KycState,
+  KycSubmissionSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
+import { timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { DateSchema } from '@p2p-energy-trading-platform/typescript-sdk/gen/google/type/date_pb';
 import type { CheckPermissionUseCase } from '../../../features/authorization/check-permission.js';
 import type { GetUseCase } from '../../../features/authorization/get-user.js';
 import type { RefreshUseCase } from '../../../features/authentication/refresh.js';
@@ -57,6 +63,7 @@ interface AuthServiceDependencies {
   verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
+  submitKycUseCase: SubmitKycUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -351,5 +358,76 @@ export function createAuthServiceImplementation(
         throw toGrpcError(error);
       }
     },
+
+    submitKyc: async (req, context) => {
+      try {
+        const userId = context.requestHeader.get('x-gridx-user-id');
+
+        if (!userId) {
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+        }
+
+        const submission = await deps.submitKycUseCase.execute({
+          userId,
+          fullName: req.fullName,
+          dateOfBirth: req.dateOfBirth ? formatDate(req.dateOfBirth) : '',
+          dubaiId: req.dubaiId,
+          documentPath: req.documentPath,
+        });
+
+        return create(SubmitKycResponseSchema, {
+          submission: create(KycSubmissionSchema, {
+            id: submission.id,
+            userId: submission.userId,
+            fullName: submission.fullName,
+            dateOfBirth: create(DateSchema, parseDate(submission.dateOfBirth)),
+            dubaiId: submission.dubaiId,
+            documentPath: submission.documentPath,
+            state: toKycState(submission.state),
+            rejectionReason: submission.rejectionReason ?? '',
+            verifiedAt: submission.verifiedAt
+              ? timestampFromDate(new Date(submission.verifiedAt))
+              : undefined,
+            createdAt: timestampFromDate(new Date(submission.createdAt)),
+            updatedAt: timestampFromDate(new Date(submission.updatedAt)),
+          }),
+        });
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    },
   };
+}
+
+function formatDate(date: { year: number; month: number; day: number }): string {
+  return `${date.year.toString().padStart(4, '0')}-${date.month
+    .toString()
+    .padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`;
+}
+
+function parseDate(value: string): { year: number; month: number; day: number } {
+  const parts = value.split('-');
+
+  if (parts.length !== 3 || parts.some((part) => !/^\d+$/.test(part))) {
+    throw new Error(`Invalid KYC date returned by repository: ${value}`);
+  }
+
+  return {
+    year: Number(parts[0]),
+    month: Number(parts[1]),
+    day: Number(parts[2]),
+  };
+}
+
+function toKycState(state: string): KycState {
+  switch (state) {
+    case 'PENDING':
+      return KycState.PENDING;
+    case 'VERIFIED':
+      return KycState.VERIFIED;
+    case 'REJECTED':
+      return KycState.REJECTED;
+    default:
+      return KycState.UNSPECIFIED;
+  }
 }
