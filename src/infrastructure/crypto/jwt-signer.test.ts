@@ -98,4 +98,26 @@ describe('JwtSigner', () => {
     expect(payload.tenantId).toBe('tenant_abc');
     expect(payload.isVerified).toBe(true);
   });
+  
+  it('rejects an expired access token', async () => {
+    const signer = new JwtSigner(
+      mockKeyProvider,
+      ISSUER,
+      AUDIENCE,
+      -1,
+    );
+
+    const token = await signer.signAccessToken({
+      sub: 'usr_expired',
+    });
+
+    await expect(
+      jwtVerify(token, publicKey, {
+        issuer: ISSUER,
+        audience: AUDIENCE,
+      }),
+    ).rejects.toMatchObject({
+      code: 'ERR_JWT_EXPIRED',
+    });
+  });  
 });
