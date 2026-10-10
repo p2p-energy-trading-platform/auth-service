@@ -16,7 +16,7 @@ export interface RegisteredUser {
   name: string | null;
   status: string;
   role: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 export interface AuthenticatedUser extends RegisteredUser {
@@ -34,7 +34,7 @@ export class UserRepository {
             u.name,
             u.status,
             r.name AS role,
-            u.created_at AS "createdAt",
+            u.created_at AS "createdAt"
           FROM users u
           INNER JOIN credentials c ON c.user_id = u.id
           LEFT JOIN roles r ON r.id = u.role_id

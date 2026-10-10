@@ -38,6 +38,7 @@ export default fp(async (fastify) => {
     apiKey: fastify.config.MAILTRAP_API_KEY,
     fromEmail: fastify.config.MAILTRAP_FROM_EMAIL,
     fromName: fastify.config.MAILTRAP_FROM_NAME,
+    textInboxId: fastify.config.MAILTRAP_INBOX_ID,
   });
 
   const registerUseCase = new RegisterUseCase(

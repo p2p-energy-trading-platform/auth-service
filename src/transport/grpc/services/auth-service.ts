@@ -81,7 +81,8 @@ export function createAuthServiceImplementation(
           userId: user.id,
           email: user.email,
           status: user.status,
-          createdAt: user.createdAt,
+          createdAt: user.createdAt.toISOString(),
+          createdAtTime: timestampFromDate(user.createdAt),
         });
       } catch (error) {
         throw toGrpcError(error);
@@ -191,7 +192,8 @@ export function createAuthServiceImplementation(
             email: profile.email,
             name: profile.name ?? '',
             status: profile.status,
-            createdAt: profile.createdAt,
+            createdAt: profile.createdAt.toISOString(),
+            createdAtTime: timestampFromDate(profile.createdAt),
           },
         });
       } catch (error) {
@@ -232,7 +234,8 @@ export function createAuthServiceImplementation(
             email: profile.email,
             name: profile.name ?? '',
             status: profile.status,
-            createdAt: profile.createdAt,
+            createdAt: profile.createdAt.toISOString(),
+            createdAtTime: timestampFromDate(profile.createdAt),
           },
         });
       } catch (error) {
@@ -324,7 +327,8 @@ export function createAuthServiceImplementation(
             email: profile.email,
             name: profile.name ?? '',
             status: profile.status,
-            createdAt: profile.createdAt,
+            createdAt: profile.createdAt.toISOString(),
+            createdAtTime: timestampFromDate(profile.createdAt),
           },
         });
       } catch (error) {
