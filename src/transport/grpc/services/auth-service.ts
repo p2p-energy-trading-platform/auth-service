@@ -83,12 +83,20 @@ export function createAuthServiceImplementation(
           password: req.password,
         });
 
+        const loginResult = await deps.loginUseCase.execute({
+          email: req.email,
+          password: req.password,
+        });
+
         return create(RegisterResponseSchema, {
           userId: user.id,
           email: user.email,
           status: user.status,
           createdAt: user.createdAt.toISOString(),
           createdAtTime: timestampFromDate(user.createdAt),
+          accessToken: loginResult.accessToken,
+          refreshToken: loginResult.refreshToken,
+          expiresIn: BigInt(loginResult.expiresIn),
         });
       } catch (error) {
         deps.logger.error({ err: error }, 'Failed to register user in gRPC service');
