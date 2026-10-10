@@ -351,5 +351,13 @@ export function createAuthServiceImplementation(
         throw toGrpcError(error);
       }
     },
+
+    submitKyc: async (_req, _context) => {
+      try {
+        throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'submit kyc is not implemented');
+      } catch (error) {
+        throw toGrpcError(error);
+      }
+    }
   };
 }
