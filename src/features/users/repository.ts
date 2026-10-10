@@ -28,18 +28,18 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<RegisteredUser | null> {
     const [user] = await this.db<RegisteredUser[]>`
-           SELECT
-            u.id,
-            u.email,
-            u.name,
-            u.status,
-            r.name AS role,
-            u.created_at AS "createdAt"
-          FROM users u
-          INNER JOIN credentials c ON c.user_id = u.id
-          LEFT JOIN roles r ON r.id = u.role_id
-          WHERE LOWER(u.email) = LOWER(${email});      
-        `;
+      SELECT
+        u.id,
+        u.email,
+        u.name,
+        u.status,
+        r.name AS role,
+        u.created_at AS "createdAt"
+      FROM users u
+      INNER JOIN credentials c ON c.user_id = u.id
+      LEFT JOIN roles r ON r.id = u.role_id
+      WHERE LOWER(u.email) = LOWER(${email});
+    `;
 
     return user ?? null;
   }
@@ -65,22 +65,21 @@ export class UserRepository {
 
   async createUsersWithCredentials(params: CreateUserParams): Promise<RegisteredUser> {
     const [newUser] = await this.db<RegisteredUser[]>`
-      WITH default_role AS (
-        SELECT id FROM roles WHERE name = 'user'
+      WITH new_user AS (
+        INSERT INTO users (email, name, status, role_id)
+        SELECT ${params.email}, ${params.name}, 'PENDING', r.id
+        FROM roles r
+        WHERE r.name = 'user'
+        RETURNING id, email, name, status, role_id, created_at AS "createdAt"
       ),
-      new_user AS (
-          INSERT INTO users (email, name, status, role_id)
-          SELECT ${params.email}, ${params.name}, 'PENDING', dr.id
-          FROM default_role dr
-          RETURNING id, email, name, status, role_id, created_at AS "createdAt"
-      ),
+
       new_credentials AS (
         INSERT INTO credentials (user_id, password_hash)
         SELECT id, ${params.passwordHash}
         FROM new_user
         RETURNING user_id
       )
-      SELECT 
+      SELECT
         nu.id,
         nu.email,
         nu.name,
@@ -88,11 +87,12 @@ export class UserRepository {
         r.name AS role,
         nu."createdAt"
       FROM new_user nu
-      JOIN roles r ON r.id = nu.role_id;
-  `;
+      JOIN roles r ON r.id = nu.role_id
+      JOIN new_credentials nc ON nc.user_id = nu.id;
+    `;
 
     if (!newUser) {
-      throw new AppError(ErrorCodes.INTERNAL, 'Failed to create user record.');
+      throw new AppError(ErrorCodes.INTERNAL, 'Failed to create user and credentials.');
     }
 
     return newUser;

@@ -9,6 +9,8 @@ export interface TemporaryTokenStore {
 
   get(purpose: TemporaryTokenPurpose, token: string): Promise<string | null>;
 
+  consume(purpose: TemporaryTokenPurpose, token: string): Promise<string | null>;
+
   delete(purpose: TemporaryTokenPurpose, token: string): Promise<void>;
 }
 
@@ -40,6 +42,13 @@ export class RedisTemporaryTokenStore implements TemporaryTokenStore {
     const key = temporaryTokenKey(purpose, tokenHash);
 
     return this.redis.get(key);
+  }
+
+  async consume(purpose: TemporaryTokenPurpose, token: string): Promise<string | null> {
+    const tokenHash = hashOpaqueToken(token);
+    const key = temporaryTokenKey(purpose, tokenHash);
+
+    return this.redis.getDel(key);
   }
 
   async delete(purpose: TemporaryTokenPurpose, token: string): Promise<void> {
