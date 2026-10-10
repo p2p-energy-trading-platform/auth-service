@@ -13,6 +13,7 @@ import type { RequestPasswordResetUseCase } from '../../../features/authenticati
 import type { ResetPasswordUseCase } from '../../../features/authentication/reset-password.js';
 import type { RequestEmailChangeUseCase } from '../../../features/authentication/request-email-change.js';
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
+import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
 
 import {
   AuthService,
@@ -32,14 +33,22 @@ import {
   RefreshTokenResponseSchema,
   VerifyEmailResponseSchema,
   ResendOtpResponseSchema,
+  SubmitKycResponseSchema,
+  KycSubmissionSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
+import { DateSchema } from '@p2p-energy-trading-platform/typescript-sdk/gen/google/type/date_pb';
 import type { CheckPermissionUseCase } from '../../../features/authorization/check-permission.js';
 import type { GetUseCase } from '../../../features/authorization/get-user.js';
 import type { RefreshUseCase } from '../../../features/authentication/refresh.js';
 import type { VerifyEmailUseCase } from '../../../features/authentication/verify-email.js';
 import type { ResendOtpUseCase } from '../../../features/authentication/resend-otp.js';
+import {
+  formatKycDate,
+  parseKycDate,
+  toKycState,
+} from '../../../features/onboarding/kyc-helper.js';
 
 interface AuthServiceDependencies {
   registerUseCase: RegisterUseCase;
@@ -58,6 +67,7 @@ interface AuthServiceDependencies {
   verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
+  submitKycUseCase: SubmitKycUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -357,9 +367,39 @@ export function createAuthServiceImplementation(
       }
     },
 
-    submitKyc: async (_req, _context) => {
+    submitKyc: async (req, context) => {
       try {
-        throw new AppError(ErrorCodes.NOT_IMPLEMENTED, 'submit kyc is not implemented');
+        const userId = context.requestHeader.get('x-gridx-user-id');
+
+        if (!userId) {
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+        }
+
+        const submission = await deps.submitKycUseCase.execute({
+          userId,
+          fullName: req.fullName,
+          dateOfBirth: req.dateOfBirth ? formatKycDate(req.dateOfBirth) : '',
+          dubaiId: req.dubaiId,
+          documentPath: req.documentPath,
+        });
+
+        return create(SubmitKycResponseSchema, {
+          submission: create(KycSubmissionSchema, {
+            id: submission.id,
+            userId: submission.userId,
+            fullName: submission.fullName,
+            dateOfBirth: create(DateSchema, parseKycDate(submission.dateOfBirth)),
+            dubaiId: submission.dubaiId,
+            documentPath: submission.documentPath,
+            state: toKycState(submission.state),
+            rejectionReason: submission.rejectionReason ?? '',
+            verifiedAt: submission.verifiedAt
+              ? timestampFromDate(new Date(submission.verifiedAt))
+              : undefined,
+            createdAt: timestampFromDate(new Date(submission.createdAt)),
+            updatedAt: timestampFromDate(new Date(submission.updatedAt)),
+          }),
+        });
       } catch (error) {
         throw toGrpcError(error);
       }

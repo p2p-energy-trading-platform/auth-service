@@ -22,6 +22,7 @@ import { VerifyEmailChangeUseCase } from '../../features/authentication/verify-e
 import type { RefreshUseCase } from '../../features/authentication/refresh.js';
 import type { VerifyEmailUseCase } from '../../features/authentication/verify-email.js';
 import type { ResendOtpUseCase } from '../../features/authentication/resend-otp.js';
+import type { SubmitKycUseCase } from '../../features/onboarding/submit-kyc.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
@@ -41,6 +42,7 @@ export interface GrpcServerDependencies {
   verifyEmailChangeUseCase: VerifyEmailChangeUseCase;
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
+  submitKycUseCase: SubmitKycUseCase;
 }
 
 export class GrpcServer {
@@ -75,6 +77,7 @@ export class GrpcServer {
         verifyEmailChangeUseCase: this.deps.verifyEmailChangeUseCase,
         verifyEmailUseCase: this.deps.verifyEmailUseCase,
         resendOtpUseCase: this.deps.resendOtpUseCase,
+        submitKycUseCase: this.deps.submitKycUseCase,
       }),
     );
   }
