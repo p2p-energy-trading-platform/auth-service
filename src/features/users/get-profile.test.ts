@@ -7,7 +7,7 @@ interface MockUser {
   email: string;
   name: string | null;
   status: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 type FindById = (userId: string) => Promise<MockUser | null>;
@@ -20,7 +20,7 @@ describe('GetProfileUseCase', () => {
         email: 'user@example.com',
         name: 'user1234',
         status: 'ACTIVE',
-        createdAt: '2026-10-03T00:00:00.000Z',
+        createdAt: new Date('2026-10-03T00:00:00.000Z'),
       }),
     };
 
@@ -35,7 +35,7 @@ describe('GetProfileUseCase', () => {
       email: 'user@example.com',
       name: 'user1234',
       status: 'ACTIVE',
-      createdAt: '2026-10-03T00:00:00.000Z',
+      createdAt: new Date('2026-10-03T00:00:00.000Z'),
     });
 
     expect(users.findById).toHaveBeenCalledWith('user-123');
@@ -78,7 +78,7 @@ describe('GetProfileUseCase', () => {
         email: 'user@example.com',
         name: 'user1234',
         status: 'ACTIVE',
-        createdAt: '2026-10-03T00:00:00.000Z',
+        createdAt: new Date('2026-10-03T00:00:00.000Z'),
       }),
     };
 
