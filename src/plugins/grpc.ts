@@ -114,6 +114,7 @@ export default fp(async (fastify) => {
 
   const grpcServer = new GrpcServer({
     config: fastify.config,
+    logger: fastify.log,
     registerUseCase,
     loginUseCase,
     refreshUseCase,
