@@ -34,7 +34,6 @@ import {
   VerifyEmailResponseSchema,
   ResendOtpResponseSchema,
   SubmitKycResponseSchema,
-  KycState,
   KycSubmissionSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
@@ -45,6 +44,11 @@ import type { GetUseCase } from '../../../features/authorization/get-user.js';
 import type { RefreshUseCase } from '../../../features/authentication/refresh.js';
 import type { VerifyEmailUseCase } from '../../../features/authentication/verify-email.js';
 import type { ResendOtpUseCase } from '../../../features/authentication/resend-otp.js';
+import {
+  formatKycDate,
+  parseKycDate,
+  toKycState,
+} from '../../../features/onboarding/kyc-helper.js';
 
 interface AuthServiceDependencies {
   registerUseCase: RegisterUseCase;
@@ -374,7 +378,7 @@ export function createAuthServiceImplementation(
         const submission = await deps.submitKycUseCase.execute({
           userId,
           fullName: req.fullName,
-          dateOfBirth: req.dateOfBirth ? formatDate(req.dateOfBirth) : '',
+          dateOfBirth: req.dateOfBirth ? formatKycDate(req.dateOfBirth) : '',
           dubaiId: req.dubaiId,
           documentPath: req.documentPath,
         });
@@ -384,7 +388,7 @@ export function createAuthServiceImplementation(
             id: submission.id,
             userId: submission.userId,
             fullName: submission.fullName,
-            dateOfBirth: create(DateSchema, parseDate(submission.dateOfBirth)),
+            dateOfBirth: create(DateSchema, parseKycDate(submission.dateOfBirth)),
             dubaiId: submission.dubaiId,
             documentPath: submission.documentPath,
             state: toKycState(submission.state),
@@ -401,37 +405,4 @@ export function createAuthServiceImplementation(
       }
     },
   };
-}
-
-function formatDate(date: { year: number; month: number; day: number }): string {
-  return `${date.year.toString().padStart(4, '0')}-${date.month
-    .toString()
-    .padStart(2, '0')}-${date.day.toString().padStart(2, '0')}`;
-}
-
-function parseDate(value: string): { year: number; month: number; day: number } {
-  const parts = value.split('-');
-
-  if (parts.length !== 3 || parts.some((part) => !/^\d+$/.test(part))) {
-    throw new Error(`Invalid KYC date returned by repository: ${value}`);
-  }
-
-  return {
-    year: Number(parts[0]),
-    month: Number(parts[1]),
-    day: Number(parts[2]),
-  };
-}
-
-function toKycState(state: string): KycState {
-  switch (state) {
-    case 'PENDING':
-      return KycState.PENDING;
-    case 'VERIFIED':
-      return KycState.VERIFIED;
-    case 'REJECTED':
-      return KycState.REJECTED;
-    default:
-      return KycState.UNSPECIFIED;
-  }
 }
