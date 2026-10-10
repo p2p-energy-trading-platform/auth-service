@@ -79,6 +79,7 @@ export function createAuthServiceImplementation(
     register: async (req, _context) => {
       try {
         const user = await deps.registerUseCase.execute({
+          name: req.name,
           email: req.email,
           password: req.password,
         });
