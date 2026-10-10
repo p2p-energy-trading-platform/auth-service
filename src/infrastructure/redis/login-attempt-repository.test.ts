@@ -108,6 +108,21 @@ describe('LoginAttemptRepository', () => {
 
     });
 
+    
+    it('allows attempts again after the counter expires', async () => {
+
+        vi.mocked(redis.get).mockResolvedValue(null);
+
+        await expect(
+            repository.isLimited('user@example.com'),
+        ).resolves.toBe(false);
+
+        await expect(
+            repository.getAttempts('user@example.com'),
+        ).resolves.toBe(0);
+    
+    });
+
 
 });
 
