@@ -111,7 +111,7 @@ export function createAuthServiceImplementation(
           expiresIn: BigInt(result.expiresIn),
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to login user in gRPC service');
+        deps.logger.error({ err: error }, 'Failed to login user in gRPC service');
         throw toGrpcError(error);
       }
     },
@@ -128,7 +128,7 @@ export function createAuthServiceImplementation(
           expiresIn: result.expiresIn,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to refresh token');
+        deps.logger.error({ err: error }, 'Failed to refresh token');
         throw toGrpcError(error);
       }
     },
@@ -143,7 +143,7 @@ export function createAuthServiceImplementation(
           success: result.success,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to logout user');
+        deps.logger.error({ err: error }, 'Failed to logout user');
         throw toGrpcError(error);
       }
     },
@@ -164,7 +164,7 @@ export function createAuthServiceImplementation(
           success: result.success,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to logout all instances of user');
+        deps.logger.error({ err: error }, 'Failed to logout all instances of user');
         throw toGrpcError(error);
       }
     },
@@ -181,7 +181,7 @@ export function createAuthServiceImplementation(
           role: result.role,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to get user data');
+        deps.logger.error({ err: error }, 'Failed to get user data');
         throw toGrpcError(error);
       }
     },
@@ -209,7 +209,7 @@ export function createAuthServiceImplementation(
           },
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to get profile data');
+        deps.logger.error({ err: error }, 'Failed to get profile data');
         throw toGrpcError(error);
       }
     },
@@ -224,7 +224,7 @@ export function createAuthServiceImplementation(
           allowed: result.allowed,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to check permission');
+        deps.logger.error({ err: error }, 'Failed to check permission');
         throw toGrpcError(error);
       }
     },
@@ -253,7 +253,7 @@ export function createAuthServiceImplementation(
           },
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to update profile');
+        deps.logger.error({ err: error }, 'Failed to update profile');
         throw toGrpcError(error);
       }
     },
@@ -276,7 +276,7 @@ export function createAuthServiceImplementation(
           success: result.success,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to change password');
+        deps.logger.error({ err: error }, 'Failed to change password');
         throw toGrpcError(error);
       }
     },
@@ -291,7 +291,7 @@ export function createAuthServiceImplementation(
           success: result.success,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to request password reset');
+        deps.logger.error({ err: error }, 'Failed to request password reset');
         throw toGrpcError(error);
       }
     },
@@ -307,7 +307,7 @@ export function createAuthServiceImplementation(
           success: result.success,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to reset password');
+        deps.logger.error({ err: error }, 'Failed to reset password');
         throw toGrpcError(error);
       }
     },
@@ -329,7 +329,7 @@ export function createAuthServiceImplementation(
           success: result.success,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to request email change');
+        deps.logger.error({ err: error }, 'Failed to request email change');
         throw toGrpcError(error);
       }
     },
@@ -351,7 +351,7 @@ export function createAuthServiceImplementation(
           },
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to verify email change');
+        deps.logger.error({ err: error }, 'Failed to verify email change');
         throw toGrpcError(error);
       }
     },
@@ -368,7 +368,7 @@ export function createAuthServiceImplementation(
           message: 'Email verified successfully',
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to verify email');
+        deps.logger.error({ err: error }, 'Failed to verify email');
         throw toGrpcError(error);
       }
     },
@@ -380,7 +380,7 @@ export function createAuthServiceImplementation(
           success: true,
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to resend otp');
+        deps.logger.error({ err: error }, 'Failed to resend otp');
         throw toGrpcError(error);
       }
     },
@@ -419,7 +419,7 @@ export function createAuthServiceImplementation(
           }),
         });
       } catch (error) {
-        deps.logger.error({err: error}, 'Failed to submit kyc');
+        deps.logger.error({ err: error }, 'Failed to submit kyc');
         throw toGrpcError(error);
       }
     },
