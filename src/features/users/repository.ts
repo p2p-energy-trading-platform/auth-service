@@ -106,10 +106,10 @@ export class UserRepository {
         u.name,
         u.status,
         r.name AS role,
-        created_at AS "createdAt"
-      FROM users
+        u.created_at AS "createdAt"
+      FROM users AS u
       LEFT JOIN roles r ON u.role_id = r.id
-      WHERE id = ${userId};
+      WHERE u.id = ${userId};
     `;
 
     return user ?? null;

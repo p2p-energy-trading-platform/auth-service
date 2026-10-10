@@ -35,6 +35,9 @@ const profile = {
 };
 
 type MockDependencies = {
+  logger: {
+    error: ReturnType<typeof vi.fn>;
+  };
   registerUseCase: { execute: ReturnType<typeof vi.fn<RegisterUseCase['execute']>> };
   loginUseCase: { execute: ReturnType<typeof vi.fn<LoginUseCase['execute']>> };
   logoutUseCase: { execute: ReturnType<typeof vi.fn<LogoutUseCase['execute']>> };
@@ -65,6 +68,9 @@ type MockDependencies = {
 
 function createDependencies(): MockDependencies {
   return {
+    logger: {
+      error: vi.fn<(...args: unknown[]) => void>(),
+    },
     registerUseCase: {
       execute: vi.fn<RegisterUseCase['execute']>(),
     },

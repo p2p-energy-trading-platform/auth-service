@@ -4,6 +4,7 @@ import { connectNodeAdapter } from '@connectrpc/connect-node';
 
 import type { AppConfig } from '../../config/types.js';
 import type { ConnectRouter } from '@connectrpc/connect';
+import type { FastifyBaseLogger } from 'fastify';
 import { AuthService } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { createAuthServiceImplementation } from './services/auth-service.js';
 import { RegisterUseCase } from '../../features/authentication/register.js';
@@ -26,6 +27,7 @@ import type { SubmitKycUseCase } from '../../features/onboarding/submit-kyc.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
+  logger: FastifyBaseLogger;
   registerUseCase: RegisterUseCase;
   loginUseCase: LoginUseCase;
   refreshUseCase: RefreshUseCase;
@@ -61,6 +63,7 @@ export class GrpcServer {
     router.service(
       AuthService,
       createAuthServiceImplementation({
+        logger: this.deps.logger,
         registerUseCase: this.deps.registerUseCase,
         loginUseCase: this.deps.loginUseCase,
         refreshUseCase: this.deps.refreshUseCase,

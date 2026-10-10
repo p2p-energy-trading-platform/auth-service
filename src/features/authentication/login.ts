@@ -49,7 +49,7 @@ export class LoginUseCase {
       throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Invalid email or password');
     }
 
-    if (user.status !== 'ACTIVE') {
+    if (user.status !== 'ACTIVE' && user.status !== 'PENDING') {
       throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Account is not active');
     }
 
