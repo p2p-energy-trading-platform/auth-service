@@ -231,8 +231,8 @@ describe('AuthService gRPC implementation', () => {
       state: 'PENDING',
       rejectionReason: null,
       verifiedAt: null,
-      createdAt: '2026-10-05T00:00:00.000Z',
-      updatedAt: '2026-10-05T00:00:00.000Z',
+      createdAt: new Date('2026-10-05T00:00:00.000Z'),
+      updatedAt: new Date('2026-10-05T00:00:00.000Z'),
     });
 
     const service = createAuthServiceImplementation(deps as never);
