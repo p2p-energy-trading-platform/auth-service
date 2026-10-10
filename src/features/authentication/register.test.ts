@@ -16,7 +16,7 @@ function createUseCase() {
         email: 'user@example.com',
         name: 'John Doe',
         status: 'PENDING',
-      role: 'user',
+        role: 'user',
         createdAt: new Date('2026-10-10T00:00:00.000Z'),
       }),
   };
