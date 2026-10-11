@@ -1,9 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const sendMock = vi.fn<() => Promise<void>>();
+const { sendMock, clientOptionsMock } = vi.hoisted(() => ({
+  sendMock: vi.fn<() => Promise<void>>(),
+  clientOptionsMock: vi.fn<(options: unknown) => void>(),
+}));
 
 vi.mock('mailtrap', () => ({
   MailtrapClient: class {
+    constructor(options: unknown) {
+      clientOptionsMock(options);
+    }
     send = sendMock;
   },
 }));
@@ -18,7 +24,14 @@ describe('MailtrapEmailProvider', () => {
       apiKey: 'test-api-key',
       fromEmail: 'noreply@example.com',
       fromName: 'GridX',
-      textInboxId: 13232,
+      sandbox: true,
+      testInboxId: 4953308,
+    });
+
+    expect(clientOptionsMock).toHaveBeenCalledWith({
+      token: 'test-api-key',
+      sandbox: true,
+      testInboxId: 4953308,
     });
 
     await provider.send({
@@ -47,7 +60,8 @@ describe('MailtrapEmailProvider', () => {
       apiKey: 'test-api-key',
       fromEmail: 'noreply@example.com',
       fromName: 'GridX',
-      textInboxId: 13232,
+      sandbox: true,
+      testInboxId: 4953308,
     });
 
     await provider.send({
@@ -74,7 +88,8 @@ describe('MailtrapEmailProvider', () => {
       apiKey: 'test-api-key',
       fromEmail: 'noreply@example.com',
       fromName: 'GridX',
-      textInboxId: 13232,
+      sandbox: true,
+      testInboxId: 4953308,
     });
 
     await expect(

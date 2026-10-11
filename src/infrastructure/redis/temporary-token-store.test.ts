@@ -6,6 +6,7 @@ function createRedisMock() {
   return {
     set: vi.fn<(key: string, value: string, options: { EX: number }) => Promise<string>>(),
     get: vi.fn<(key: string) => Promise<string | null>>(),
+    getDel: vi.fn<(key: string) => Promise<string | null>>(),
     del: vi.fn<(key: string) => Promise<number>>(),
   };
 }
@@ -59,6 +60,25 @@ describe('RedisTemporaryTokenStore', () => {
     const result = await store.get('password-reset', 'missing-token');
 
     expect(result).toBeNull();
+  });
+
+  it('should atomically consume a token using its hash', async () => {
+    const redis = createRedisMock();
+    redis.getDel.mockResolvedValue('user-123');
+    const store = new RedisTemporaryTokenStore(redis as never);
+    const result = await store.consume('password-reset', 'test-token');
+    expect(result).toBe('user-123');
+    expect(redis.getDel).toHaveBeenCalledTimes(1);
+    const [key] = redis.getDel.mock.calls[0]!;
+    expect(key).toMatch(/^auth:password-reset:[a-f0-9]{64}$/);
+    expect(key).not.toContain('test-token');
+  });
+
+  it('should return null when consuming a missing token', async () => {
+    const redis = createRedisMock();
+    redis.getDel.mockResolvedValue(null);
+    const store = new RedisTemporaryTokenStore(redis as never);
+    await expect(store.consume('password-reset', 'missing-token')).resolves.toBeNull();
   });
 
   it('should delete a token using its hash', async () => {
