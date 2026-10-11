@@ -11,7 +11,7 @@ describe('RequestEmailChangeUseCase', () => {
         email: string;
         name: string | null;
         status: string;
-        createdAt: string;
+        createdAt: Date;
         role: string;
       } | null>
     >(),
@@ -21,7 +21,7 @@ describe('RequestEmailChangeUseCase', () => {
         email: string;
         name: string | null;
         status: string;
-        createdAt: string;
+        createdAt: Date;
         role: string;
       } | null>
     >(),
@@ -58,7 +58,7 @@ describe('RequestEmailChangeUseCase', () => {
     email: 'old@example.com',
     name: 'Test User',
     status: 'ACTIVE',
-    createdAt: '2026-01-01T00:00:00Z',
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
     role: 'user',
   };
 
@@ -142,7 +142,7 @@ describe('RequestEmailChangeUseCase', () => {
       email: '',
       name: null,
       status: '',
-      createdAt: '',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
       role: '',
     });
 
@@ -183,7 +183,7 @@ describe('RequestEmailChangeUseCase', () => {
       email: '',
       name: null,
       status: '',
-      createdAt: '',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
       role: '',
     });
     userRepo.findById.mockResolvedValue(currentUser);

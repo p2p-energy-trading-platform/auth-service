@@ -10,9 +10,9 @@ export interface KycSubmission {
   documentPath: string;
   state: OnboardingState;
   rejectionReason: string | null;
-  verifiedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  verifiedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface SaveKycSubmissionParams {

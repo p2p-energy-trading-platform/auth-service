@@ -9,6 +9,7 @@ import type { RequestPasswordResetUseCase } from '../../../features/authenticati
 import type { RequestEmailChangeUseCase } from '../../../features/authentication/request-email-change.js';
 import type { ResetPasswordUseCase } from '../../../features/authentication/reset-password.js';
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
+import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
 import { describe, expect, it, vi } from 'vitest';
 import { Code, ConnectError } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
@@ -18,6 +19,7 @@ import {
   ChangePasswordRequestSchema,
   RequestPasswordResetRequestSchema,
   VerifyEmailChangeRequestSchema,
+  SubmitKycRequestSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { AppError } from '../../../errors/app-error.js';
 import { ErrorCodes } from '../../../errors/codes.js';
@@ -28,11 +30,14 @@ const profile = {
   email: 'user@example.com',
   name: 'Test User',
   status: 'ACTIVE',
-  createdAt: '2026-01-01T00:00:00.000Z',
+  createdAt: new Date('2026-01-01T00:00:00.000Z'),
   role: 'user',
 };
 
 type MockDependencies = {
+  logger: {
+    error: ReturnType<typeof vi.fn>;
+  };
   registerUseCase: { execute: ReturnType<typeof vi.fn<RegisterUseCase['execute']>> };
   loginUseCase: { execute: ReturnType<typeof vi.fn<LoginUseCase['execute']>> };
   logoutUseCase: { execute: ReturnType<typeof vi.fn<LogoutUseCase['execute']>> };
@@ -56,10 +61,16 @@ type MockDependencies = {
   verifyEmailChangeUseCase: {
     execute: ReturnType<typeof vi.fn<VerifyEmailChangeUseCase['execute']>>;
   };
+  submitKycUseCase: {
+    execute: ReturnType<typeof vi.fn<SubmitKycUseCase['execute']>>;
+  };
 };
 
 function createDependencies(): MockDependencies {
   return {
+    logger: {
+      error: vi.fn<(...args: unknown[]) => void>(),
+    },
     registerUseCase: {
       execute: vi.fn<RegisterUseCase['execute']>(),
     },
@@ -92,6 +103,9 @@ function createDependencies(): MockDependencies {
     },
     verifyEmailChangeUseCase: {
       execute: vi.fn<VerifyEmailChangeUseCase['execute']>(),
+    },
+    submitKycUseCase: {
+      execute: vi.fn<SubmitKycUseCase['execute']>(),
     },
   };
 }
@@ -209,6 +223,60 @@ describe('AuthService gRPC implementation', () => {
     });
 
     expect(deps.requestEmailChangeUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('submits KYC for the authenticated user and maps the response', async () => {
+    const deps = createDependencies();
+    deps.submitKycUseCase.execute.mockResolvedValue({
+      id: 'kyc-123',
+      userId: 'user-123',
+      fullName: 'Jane Doe',
+      dateOfBirth: '1990-01-01',
+      dubaiId: '784-1990-1234567-1',
+      documentPath: 'uploads/document.pdf',
+      state: 'PENDING',
+      rejectionReason: null,
+      verifiedAt: null,
+      createdAt: new Date('2026-10-05T00:00:00.000Z'),
+      updatedAt: new Date('2026-10-05T00:00:00.000Z'),
+    });
+
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(SubmitKycRequestSchema, {
+      fullName: ' Jane Doe ',
+      dateOfBirth: { year: 1990, month: 1, day: 1 },
+      dubaiId: ' 784-1990-1234567-1 ',
+      documentPath: ' uploads/document.pdf ',
+    });
+
+    const response = await service.submitKyc(request, createContext('user-123'));
+
+    expect(deps.submitKycUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-123',
+      fullName: ' Jane Doe ',
+      dateOfBirth: '1990-01-01',
+      dubaiId: ' 784-1990-1234567-1 ',
+      documentPath: ' uploads/document.pdf ',
+    });
+    expect(response.submission?.userId).toBe('user-123');
+    expect(response.submission?.dateOfBirth).toMatchObject({
+      year: 1990,
+      month: 1,
+      day: 1,
+    });
+    expect(response.submission?.state).toBe(1);
+  });
+
+  it('requires authentication for SubmitKyc', async () => {
+    const deps = createDependencies();
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(SubmitKycRequestSchema);
+
+    await expect(service.submitKyc(request, createContext())).rejects.toMatchObject({
+      code: Code.Unauthenticated,
+    });
+
+    expect(deps.submitKycUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('passes the verification token to VerifyEmailChange', async () => {

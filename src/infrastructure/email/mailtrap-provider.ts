@@ -5,6 +5,8 @@ export interface MailtrapProviderOptions {
   apiKey: string;
   fromEmail: string;
   fromName: string;
+  sandbox: boolean;
+  testInboxId?: number;
 }
 
 export class MailtrapEmailProvider implements EmailProvider {
@@ -17,6 +19,8 @@ export class MailtrapEmailProvider implements EmailProvider {
   constructor(options: MailtrapProviderOptions) {
     this.client = new MailtrapClient({
       token: options.apiKey,
+      sandbox: options.sandbox,
+      ...(options.testInboxId !== undefined ? { testInboxId: options.testInboxId } : {}),
     });
 
     this.from = {

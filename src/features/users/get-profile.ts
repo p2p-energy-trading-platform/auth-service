@@ -7,7 +7,7 @@ export interface UserProfile {
   email: string;
   name: string | null;
   status: string;
-  createdAt: string;
+  createdAt: Date;
 }
 
 export interface GetProfileInput {
