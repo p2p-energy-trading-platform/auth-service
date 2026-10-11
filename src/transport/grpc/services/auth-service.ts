@@ -188,6 +188,7 @@ export function createAuthServiceImplementation(
           email: result.email,
           status: result.status,
           role: result.role,
+          name: result.name ?? '',
         });
       } catch (error) {
         deps.logger.error({ err: error }, 'Failed to get user data');
