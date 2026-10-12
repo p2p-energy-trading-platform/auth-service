@@ -61,6 +61,16 @@ export const envSchema = z.object({
 
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
+
+  MINIO_ENDPOINT: z.string().min(1),
+  MINIO_REGION: z.string().default('us-east-1'),
+  MINIO_KYC_BUCKET: z.string().min(1),
+  
+  MINIO_AUTH_SERVICE_ACCESS_KEY: z.string().min(1),
+  MINIO_AUTH_SERVICE_SECRET_KEY: z.string().min(1),
+
+ 
 });
+
 
 export type Env = z.infer<typeof envSchema>;
