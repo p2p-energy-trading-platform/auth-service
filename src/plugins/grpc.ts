@@ -26,6 +26,7 @@ import { VerifyEmailUseCase } from '../features/authentication/verify-email.js';
 import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
 import { KycRepository } from '../features/onboarding/repository.js';
 import { SubmitKycUseCase } from '../features/onboarding/submit-kyc.js';
+import { CreateKycUploadUrlUseCase } from '../features/onboarding/create-kyc-upload-url.js';
 import { S3FileStorage } from '../infrastructure/storage/s3-storage.js';
 import { LoginWithGoogleUseCase } from '../features/authentication/login-with-google.js';
 import { GoogleClient } from '../infrastructure/oauth/google-client.js';
@@ -132,6 +133,10 @@ export default fp(async (fastify) => {
 
   const kycRepository = new KycRepository(fastify.db);
   const submitKycUseCase = new SubmitKycUseCase(kycRepository, kycDocumentStorage);
+  const createKycUploadUrlUseCase = new CreateKycUploadUrlUseCase(
+    kycRepository,
+    kycDocumentStorage,
+  );
 
   const loginWithGoogleUseCase = new LoginWithGoogleUseCase(
     userRepository,
@@ -162,6 +167,7 @@ export default fp(async (fastify) => {
     verifyEmailUseCase,
     resendOtpUseCase,
     submitKycUseCase,
+    createKycUploadUrlUseCase,
     loginWithGoogleUseCase,
   });
 
