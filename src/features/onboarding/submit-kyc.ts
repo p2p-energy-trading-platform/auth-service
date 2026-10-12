@@ -1,5 +1,7 @@
 import { AppError } from '../../errors/app-error.js';
 import { ErrorCodes } from '../../errors/codes.js';
+import type { FileStorage } from '../../infrastructure/storage/provider.js';
+import { isAllowedKycDocument, isOwnKycDocumentKey } from './kyc-documents.js';
 import { isIsoDate } from './kyc-helper.js';
 import type { KycRepository } from './repository.js';
 import { assertValidOnboardingTransition } from './state.js';
@@ -13,7 +15,10 @@ export interface SubmitKycInput {
 }
 
 export class SubmitKycUseCase {
-  constructor(private readonly kyc: KycRepository) {}
+  constructor(
+    private readonly kyc: KycRepository,
+    private readonly storage: FileStorage,
+  ) {}
 
   async execute(input: SubmitKycInput) {
     if (!input.userId) {
@@ -43,8 +48,28 @@ export class SubmitKycUseCase {
       throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'KYC information exceeds the allowed length');
     }
 
+    if (!isOwnKycDocumentKey(input.userId, documentPath)) {
+      throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'ID document is invalid');
+    }
+
     const currentSubmission = await this.kyc.findByUserId(input.userId);
     assertValidOnboardingTransition(currentSubmission?.state ?? 'NOT_REQUIRED', 'PENDING');
+
+    const document = await this.storage.getObjectInfo(documentPath);
+
+    if (!document) {
+      throw new AppError(
+        ErrorCodes.INVALID_ARGUMENT,
+        'ID document upload was not found. Please upload it again',
+      );
+    }
+
+    if (!isAllowedKycDocument(document.contentType, document.sizeBytes)) {
+      throw new AppError(
+        ErrorCodes.INVALID_ARGUMENT,
+        'ID document must be a JPEG, PNG or PDF file of up to 10 MB',
+      );
+    }
 
     const submission = await this.kyc.saveSubmission({
       userId: input.userId,
