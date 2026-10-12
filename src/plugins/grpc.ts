@@ -26,6 +26,7 @@ import { VerifyEmailUseCase } from '../features/authentication/verify-email.js';
 import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
 import { KycRepository } from '../features/onboarding/repository.js';
 import { SubmitKycUseCase } from '../features/onboarding/submit-kyc.js';
+import { S3FileStorage } from '../infrastructure/storage/s3-storage.js';
 import { LoginWithGoogleUseCase } from '../features/authentication/login-with-google.js';
 import { GoogleClient } from '../infrastructure/oauth/google-client.js';
 
@@ -119,8 +120,18 @@ export default fp(async (fastify) => {
 
   const verifyEmailUseCase = new VerifyEmailUseCase(userRepository, otpRepository);
   const resendOtpUseCase = new ResendOtpUseCase(userRepository, emailProvider, otpRepository);
+  const kycDocumentStorage = new S3FileStorage({
+    endpoint: fastify.config.MINIO_ENDPOINT,
+    publicEndpoint: fastify.config.MINIO_PUBLIC_ENDPOINT,
+    region: fastify.config.MINIO_REGION,
+    bucket: fastify.config.MINIO_KYC_BUCKET,
+    accessKeyId: fastify.config.MINIO_AUTH_SERVICE_ACCESS_KEY,
+    secretAccessKey: fastify.config.MINIO_AUTH_SERVICE_SECRET_KEY,
+    forcePathStyle: fastify.config.MINIO_FORCE_PATH_STYLE,
+  });
+
   const kycRepository = new KycRepository(fastify.db);
-  const submitKycUseCase = new SubmitKycUseCase(kycRepository);
+  const submitKycUseCase = new SubmitKycUseCase(kycRepository, kycDocumentStorage);
 
   const loginWithGoogleUseCase = new LoginWithGoogleUseCase(
     userRepository,
