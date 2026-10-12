@@ -26,6 +26,8 @@ import { VerifyEmailUseCase } from '../features/authentication/verify-email.js';
 import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
 import { KycRepository } from '../features/onboarding/repository.js';
 import { SubmitKycUseCase } from '../features/onboarding/submit-kyc.js';
+import { LoginWithGoogleUseCase } from '../features/authentication/login-with-google.js';
+import { GoogleClient } from '../infrastructure/oauth/google-client.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
@@ -43,6 +45,11 @@ export default fp(async (fastify) => {
       ? { testInboxId: fastify.config.MAILTRAP_INBOX_ID }
       : {}),
   });
+
+  const googleClient = new GoogleClient(
+    fastify.config.GOOGLE_CLIENT_ID,
+    fastify.config.GOOGLE_CLIENT_SECRET,
+  );
 
   const registerUseCase = new RegisterUseCase(
     userRepository,
@@ -115,6 +122,15 @@ export default fp(async (fastify) => {
   const kycRepository = new KycRepository(fastify.db);
   const submitKycUseCase = new SubmitKycUseCase(kycRepository);
 
+  const loginWithGoogleUseCase = new LoginWithGoogleUseCase(
+    userRepository,
+    googleClient,
+    fastify.jwtSigner,
+    sessionRepository,
+    fastify.config.AUTH_ACCESS_TOKEN_TTL_SECONDS,
+    fastify.config.AUTH_REFRESH_TOKEN_TTL_SECONDS,
+  );
+
   const grpcServer = new GrpcServer({
     config: fastify.config,
     logger: fastify.log,
@@ -135,6 +151,7 @@ export default fp(async (fastify) => {
     verifyEmailUseCase,
     resendOtpUseCase,
     submitKycUseCase,
+    loginWithGoogleUseCase,
   });
 
   fastify.decorate('grpcServer', grpcServer);

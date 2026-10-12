@@ -19,6 +19,14 @@ export interface RegisteredUser {
   createdAt: Date;
 }
 
+export interface UserIdentity {
+  id: string;
+  userId: string;
+  provider: string;
+  providerSubject: string;
+  email: string;
+}
+
 export interface AuthenticatedUser extends RegisteredUser {
   passwordHash: string;
 }
@@ -199,5 +207,82 @@ export class UserRepository {
     `;
 
     return result.count > 0;
+  }
+
+  async findByIdentity(provider: string, providerSubject: string): Promise<RegisteredUser | null> {
+    const [user] = await this.db<RegisteredUser[]>`
+      SELECT
+        u.id,
+        u.email,
+        u.name,
+        u.status,
+        r.name AS role,
+        u.created_at AS "createdAt"
+      FROM users u
+      INNER JOIN user_identities ui ON ui.user_id = u.id
+      LEFT JOIN roles r ON r.id = u.role_id
+      WHERE ui.provider = ${provider} AND ui.provider_subject = ${providerSubject};
+    `;
+    return user ?? null;
+  }
+
+  async linkIdentity(
+    userId: string,
+    provider: string,
+    providerSubject: string,
+    email: string,
+  ): Promise<void> {
+    await this.db`
+      INSERT INTO user_identities (user_id, provider, provider_subject, email)
+      VALUES (${userId}, ${provider}, ${providerSubject}, ${email})
+      ON CONFLICT (provider, provider_subject) DO NOTHING;
+    `;
+  }
+
+  async createUserWithIdentity(params: {
+    email: string;
+    name: string;
+    provider: string;
+    providerSubject: string;
+  }): Promise<RegisteredUser> {
+    const [newUser] = await this.db<RegisteredUser[]>`
+      WITH new_user AS (
+        INSERT INTO users (email, name, status, email_verified_at, role_id)
+        SELECT ${params.email}, ${params.name}, 'ACTIVE', CURRENT_TIMESTAMP, r.id
+        FROM roles r
+        WHERE r.name = 'user'
+        RETURNING id, email, name, status, role_id, created_at AS "createdAt"
+      ),
+      new_identity AS (
+        INSERT INTO user_identities (user_id, provider, provider_subject, email)
+        SELECT id, ${params.provider}, ${params.providerSubject}, ${params.email}
+        FROM new_user
+        RETURNING user_id
+      )
+      SELECT
+        nu.id,
+        nu.email,
+        nu.name,
+        nu.status,
+        r.name AS role,
+        nu."createdAt"
+      FROM new_user nu
+      JOIN roles r ON r.id = nu.role_id
+      JOIN new_identity ni ON ni.user_id = nu.id;
+    `;
+
+    if (!newUser) {
+      throw new AppError(ErrorCodes.INTERNAL, 'Failed to create user with OAuth identity.');
+    }
+
+    return newUser;
+  }
+
+  async markEmailVerifiedAndActive(userId: string): Promise<void> {
+    await this.db`
+      UPDATE users
+      SET status = 'ACTIVE', email_verified_at = COALESCE(email_verified_at, CURRENT_TIMESTAMP)
+      WHERE id = ${userId} AND status = 'PENDING';
+    `;
   }
 }

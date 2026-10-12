@@ -58,6 +58,9 @@ export const envSchema = z.object({
   GRPC_TLS_KEY_PATH: z.string().optional(),
 
   GRPC_TLS_REQUIRE_CLIENT_CERT: booleanFromEnv,
+
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;

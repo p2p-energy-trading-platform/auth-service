@@ -35,6 +35,7 @@ import {
   ResendOtpResponseSchema,
   SubmitKycResponseSchema,
   KycSubmissionSchema,
+  LoginWithGoogleResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
@@ -50,6 +51,7 @@ import {
   toKycState,
 } from '../../../features/onboarding/kyc-helper.js';
 import type { FastifyBaseLogger } from 'fastify';
+import type { LoginWithGoogleUseCase } from '../../../features/authentication/login-with-google.js';
 
 interface AuthServiceDependencies {
   logger: FastifyBaseLogger;
@@ -70,6 +72,7 @@ interface AuthServiceDependencies {
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
   submitKycUseCase: SubmitKycUseCase;
+  loginWithGoogleUseCase: LoginWithGoogleUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -430,6 +433,29 @@ export function createAuthServiceImplementation(
         });
       } catch (error) {
         deps.logger.error({ err: error }, 'Failed to submit kyc');
+        throw toGrpcError(error);
+      }
+    },
+
+    loginWithGoogle: async (req, _context) => {
+      try {
+        const result = await deps.loginWithGoogleUseCase.execute({
+          code: req.code,
+          codeVerifier: req.codeVerifier,
+          redirectUri: req.redirectUri,
+          nonce: req.nonce,
+        });
+
+        return create(LoginWithGoogleResponseSchema, {
+          userId: result.userId,
+          email: result.email,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          expiresIn: BigInt(result.expiresIn),
+          isNewUser: result.isNewUser,
+        });
+      } catch (error) {
+        deps.logger.error({ err: error }, 'Failed to login with Google in gRPC service');
         throw toGrpcError(error);
       }
     },
