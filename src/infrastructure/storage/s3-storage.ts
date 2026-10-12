@@ -14,7 +14,6 @@ export interface S3FileStorageOptions {
   forcePathStyle: boolean;
 }
 
-
 export class S3FileStorage implements FileStorage {
   private readonly client: S3Client;
   private readonly signingClient: S3Client;

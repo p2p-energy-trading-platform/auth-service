@@ -1,4 +1,3 @@
-
 export const KYC_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
 
 export const KYC_DOCUMENT_EXTENSIONS: Readonly<Record<string, string>> = {
