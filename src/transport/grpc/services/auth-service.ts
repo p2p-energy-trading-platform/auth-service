@@ -14,6 +14,7 @@ import type { ResetPasswordUseCase } from '../../../features/authentication/rese
 import type { RequestEmailChangeUseCase } from '../../../features/authentication/request-email-change.js';
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
 import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
+import type { CreateKycUploadUrlUseCase } from '../../../features/onboarding/create-kyc-upload-url.js';
 
 import {
   AuthService,
@@ -34,7 +35,9 @@ import {
   VerifyEmailResponseSchema,
   ResendOtpResponseSchema,
   SubmitKycResponseSchema,
+  CreateKycUploadUrlResponseSchema,
   KycSubmissionSchema,
+  LoginWithGoogleResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { create } from '@bufbuild/protobuf';
 import { timestampFromDate } from '@bufbuild/protobuf/wkt';
@@ -50,6 +53,7 @@ import {
   toKycState,
 } from '../../../features/onboarding/kyc-helper.js';
 import type { FastifyBaseLogger } from 'fastify';
+import type { LoginWithGoogleUseCase } from '../../../features/authentication/login-with-google.js';
 
 interface AuthServiceDependencies {
   logger: FastifyBaseLogger;
@@ -70,6 +74,8 @@ interface AuthServiceDependencies {
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
   submitKycUseCase: SubmitKycUseCase;
+  createKycUploadUrlUseCase: CreateKycUploadUrlUseCase;
+  loginWithGoogleUseCase: LoginWithGoogleUseCase;
 }
 
 export function createAuthServiceImplementation(
@@ -188,6 +194,7 @@ export function createAuthServiceImplementation(
           email: result.email,
           status: result.status,
           role: result.role,
+          name: result.name ?? '',
         });
       } catch (error) {
         deps.logger.error({ err: error }, 'Failed to get user data');
@@ -429,6 +436,54 @@ export function createAuthServiceImplementation(
         });
       } catch (error) {
         deps.logger.error({ err: error }, 'Failed to submit kyc');
+        throw toGrpcError(error);
+      }
+    },
+
+    createKycUploadUrl: async (req, context) => {
+      try {
+        const userId = context.requestHeader.get('x-gridx-user-id');
+
+        if (!userId) {
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+        }
+
+        const result = await deps.createKycUploadUrlUseCase.execute({
+          userId,
+          contentType: req.contentType,
+          sizeBytes: Number(req.sizeBytes),
+        });
+
+        return create(CreateKycUploadUrlResponseSchema, {
+          uploadUrl: result.uploadUrl,
+          objectKey: result.objectKey,
+          expiresIn: BigInt(result.expiresIn),
+        });
+      } catch (error) {
+        deps.logger.error({ err: error }, 'Failed to create kyc upload url');
+        throw toGrpcError(error);
+      }
+    },
+
+    loginWithGoogle: async (req, _context) => {
+      try {
+        const result = await deps.loginWithGoogleUseCase.execute({
+          code: req.code,
+          codeVerifier: req.codeVerifier,
+          redirectUri: req.redirectUri,
+          nonce: req.nonce,
+        });
+
+        return create(LoginWithGoogleResponseSchema, {
+          userId: result.userId,
+          email: result.email,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          expiresIn: BigInt(result.expiresIn),
+          isNewUser: result.isNewUser,
+        });
+      } catch (error) {
+        deps.logger.error({ err: error }, 'Failed to login with Google in gRPC service');
         throw toGrpcError(error);
       }
     },

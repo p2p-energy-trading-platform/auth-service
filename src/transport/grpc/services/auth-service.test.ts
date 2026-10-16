@@ -10,6 +10,7 @@ import type { RequestEmailChangeUseCase } from '../../../features/authentication
 import type { ResetPasswordUseCase } from '../../../features/authentication/reset-password.js';
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
 import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
+import type { CreateKycUploadUrlUseCase } from '../../../features/onboarding/create-kyc-upload-url.js';
 import { describe, expect, it, vi } from 'vitest';
 import { Code, ConnectError } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
@@ -20,6 +21,7 @@ import {
   RequestPasswordResetRequestSchema,
   VerifyEmailChangeRequestSchema,
   SubmitKycRequestSchema,
+  CreateKycUploadUrlRequestSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { AppError } from '../../../errors/app-error.js';
 import { ErrorCodes } from '../../../errors/codes.js';
@@ -64,6 +66,9 @@ type MockDependencies = {
   submitKycUseCase: {
     execute: ReturnType<typeof vi.fn<SubmitKycUseCase['execute']>>;
   };
+  createKycUploadUrlUseCase: {
+    execute: ReturnType<typeof vi.fn<CreateKycUploadUrlUseCase['execute']>>;
+  };
 };
 
 function createDependencies(): MockDependencies {
@@ -106,6 +111,9 @@ function createDependencies(): MockDependencies {
     },
     submitKycUseCase: {
       execute: vi.fn<SubmitKycUseCase['execute']>(),
+    },
+    createKycUploadUrlUseCase: {
+      execute: vi.fn<CreateKycUploadUrlUseCase['execute']>(),
     },
   };
 }
@@ -277,6 +285,44 @@ describe('AuthService gRPC implementation', () => {
     });
 
     expect(deps.submitKycUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('creates a KYC upload URL for the authenticated user', async () => {
+    const deps = createDependencies();
+    deps.createKycUploadUrlUseCase.execute.mockResolvedValue({
+      uploadUrl: 'http://localhost:9000/gridx-kyc/kyc/user-123/doc.pdf?X-Amz-Signature=abc',
+      objectKey: 'kyc/user-123/doc.pdf',
+      expiresIn: 300,
+    });
+
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(CreateKycUploadUrlRequestSchema, {
+      contentType: 'application/pdf',
+      sizeBytes: 2048n,
+    });
+
+    const response = await service.createKycUploadUrl(request, createContext('user-123'));
+
+    expect(deps.createKycUploadUrlUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-123',
+      contentType: 'application/pdf',
+      sizeBytes: 2048,
+    });
+    expect(response.uploadUrl).toContain('X-Amz-Signature');
+    expect(response.objectKey).toBe('kyc/user-123/doc.pdf');
+    expect(response.expiresIn).toBe(300n);
+  });
+
+  it('requires authentication for CreateKycUploadUrl', async () => {
+    const deps = createDependencies();
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(CreateKycUploadUrlRequestSchema);
+
+    await expect(service.createKycUploadUrl(request, createContext())).rejects.toMatchObject({
+      code: Code.Unauthenticated,
+    });
+
+    expect(deps.createKycUploadUrlUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('passes the verification token to VerifyEmailChange', async () => {

@@ -24,6 +24,8 @@ import type { RefreshUseCase } from '../../features/authentication/refresh.js';
 import type { VerifyEmailUseCase } from '../../features/authentication/verify-email.js';
 import type { ResendOtpUseCase } from '../../features/authentication/resend-otp.js';
 import type { SubmitKycUseCase } from '../../features/onboarding/submit-kyc.js';
+import type { CreateKycUploadUrlUseCase } from '../../features/onboarding/create-kyc-upload-url.js';
+import type { LoginWithGoogleUseCase } from '../../features/authentication/login-with-google.js';
 
 export interface GrpcServerDependencies {
   config: AppConfig;
@@ -45,6 +47,8 @@ export interface GrpcServerDependencies {
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
   submitKycUseCase: SubmitKycUseCase;
+  createKycUploadUrlUseCase: CreateKycUploadUrlUseCase;
+  loginWithGoogleUseCase: LoginWithGoogleUseCase;
 }
 
 export class GrpcServer {
@@ -81,6 +85,8 @@ export class GrpcServer {
         verifyEmailUseCase: this.deps.verifyEmailUseCase,
         resendOtpUseCase: this.deps.resendOtpUseCase,
         submitKycUseCase: this.deps.submitKycUseCase,
+        createKycUploadUrlUseCase: this.deps.createKycUploadUrlUseCase,
+        loginWithGoogleUseCase: this.deps.loginWithGoogleUseCase,
       }),
     );
   }
