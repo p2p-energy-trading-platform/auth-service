@@ -98,4 +98,74 @@ describe('JwtSigner', () => {
     expect(payload.tenantId).toBe('tenant_abc');
     expect(payload.isVerified).toBe(true);
   });
+
+  it('rejects an expired access token', async () => {
+    const signer = new JwtSigner(mockKeyProvider, ISSUER, AUDIENCE, -1);
+
+    const token = await signer.signAccessToken({
+      sub: 'usr_expired',
+    });
+
+    await expect(
+      jwtVerify(token, publicKey, {
+        issuer: ISSUER,
+        audience: AUDIENCE,
+      }),
+    ).rejects.toMatchObject({
+      code: 'ERR_JWT_EXPIRED',
+    });
+  });
+
+  it('signs new tokens with the new key while old tokens remain verifiable with the old key', async () => {
+    const newKeyPair = await generateKeyPair('EdDSA');
+    const newKeyId = 'test-key-2026-02';
+
+    const oldSigner = new JwtSigner(mockKeyProvider, ISSUER, AUDIENCE, TTL_SECONDS);
+
+    const newKeyProvider = {
+      keyId: newKeyId,
+      privateKey: newKeyPair.privateKey,
+      publicKey: newKeyPair.publicKey,
+    } as unknown as KeyProvider;
+
+    const newSigner = new JwtSigner(newKeyProvider, ISSUER, AUDIENCE, TTL_SECONDS);
+
+    const oldToken = await oldSigner.signAccessToken({
+      sub: 'usr_before_rotation',
+    });
+
+    const newToken = await newSigner.signAccessToken({
+      sub: 'usr_after_rotation',
+    });
+
+    const oldResult = await jwtVerify(oldToken, publicKey, {
+      issuer: ISSUER,
+      audience: AUDIENCE,
+    });
+
+    const newResult = await jwtVerify(newToken, newKeyPair.publicKey, {
+      issuer: ISSUER,
+      audience: AUDIENCE,
+    });
+
+    expect(oldResult.payload.sub).toBe('usr_before_rotation');
+    expect(oldResult.protectedHeader.kid).toBe(KEY_ID);
+
+    expect(newResult.payload.sub).toBe('usr_after_rotation');
+    expect(newResult.protectedHeader.kid).toBe(newKeyId);
+
+    await expect(
+      jwtVerify(oldToken, newKeyPair.publicKey, {
+        issuer: ISSUER,
+        audience: AUDIENCE,
+      }),
+    ).rejects.toMatchObject({ code: 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED' });
+
+    await expect(
+      jwtVerify(newToken, publicKey, {
+        issuer: ISSUER,
+        audience: AUDIENCE,
+      }),
+    ).rejects.toMatchObject({ code: 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED' });
+  });
 });
