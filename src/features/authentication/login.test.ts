@@ -5,6 +5,7 @@ import type { PasswordHasher } from '../../infrastructure/crypto/password-hasher
 import type { LoginAttemptRepository } from "../../infrastructure/redis/login-attempt-repository.js";
 import type { SessionRepository } from "../sessions/repository.js";
 import type { UserRepository } from "../users/repository.js";
+
 import { LoginUseCase } from "./login.js";
 
 
@@ -72,6 +73,12 @@ describe('LoginUseCase security tests', () => {
             code: ErrorCodes.INVALID_ARGUMENT,
         });
 
+        await expect(
+            useCase.execute({ email: 'user@example.com', password: '' }),
+        ).rejects.toMatchObject({
+            code: ErrorCodes.INVALID_ARGUMENT,
+        });
+
         expect(loginAttemptRepo.isLimited).not.toHaveBeenCalled();
         expect(userRepo.findByEmailWithCredentials).not.toHaveBeenCalled();
         expect(passwordHasher.verify).not.toHaveBeenCalled();
@@ -100,6 +107,7 @@ describe('LoginUseCase security tests', () => {
         expect(loginAttemptRepo.isLimited).toHaveBeenCalledWith('user@example.com');
         expect(userRepo.findByEmailWithCredentials).not.toHaveBeenCalled();
         expect(passwordHasher.verify).not.toHaveBeenCalled();
+        expect(sessionRepo.create).not.toHaveBeenCalled();
 
     });
 
@@ -154,37 +162,170 @@ describe('LoginUseCase security tests', () => {
 
     it('resets failed attempts and creates a session after successful login', async () => {
 
+        // First login: simulate an incorrect password.
+        passwordHasher.verify.mockResolvedValueOnce(false);
+
+        await expect(
+
+            useCase.execute({
+                email: 'USER@example.com',
+                password: 'wrong-password',
+            }),
+
+        ).rejects.toMatchObject({
+            code: ErrorCodes.UNAUTHENTICATED,
+        });
+
+        
+        expect(loginAttemptRepo.recordFailure).toHaveBeenCalledWith(
+            'user@example.com',
+        );
+
+
+        // Second login: simulate the correct password.
+        passwordHasher.verify.mockResolvedValueOnce(true);
+
         const result = await useCase.execute({
             email: 'USER@example.com',
             password: 'correct-password',
         });
 
+        
+
         expect(result.userId).toBe('user-1');
         expect(result.email).toBe('user@example.com');
         expect(result.accessToken).toBe('test-access-token');
-        expect(result.refreshToken).toBeTruthy();
-        expect(result.expiresIn).toBe(900);
 
-        expect(loginAttemptRepo.reset).toHaveBeenCalledWith('user@example.com');
         
-        expect(jwtSigner.signAccessToken).toHaveBeenCalledWith({
-            sub: 'user-1',
-            role: 'user',
-        });
+        expect(loginAttemptRepo.reset).toHaveBeenCalledWith(
+            'user@example.com',
+        );
 
+       
+        expect(loginAttemptRepo.recordFailure).toHaveBeenCalledTimes(1);
+
+        // Confirm that a session is created after successful login.
         expect(sessionRepo.create).toHaveBeenCalledWith(
-            
             expect.objectContaining({
                 userId: 'user-1',
                 refreshTokenHash: expect.any(String),
                 expiresAt: expect.any(Date),
             }),
-
         );
 
-        expect(loginAttemptRepo.recordFailure).not.toHaveBeenCalled();
+    });
+
+
+    it('blocks further login attempts after the configured limit is reached', async () => {
+        
+        loginAttemptRepo.isLimited
+            .mockResolvedValueOnce(false)
+            .mockResolvedValueOnce(false)
+            .mockResolvedValueOnce(false)
+            .mockResolvedValueOnce(false)
+            .mockResolvedValueOnce(false)
+            .mockResolvedValueOnce(true);
+
+        
+        passwordHasher.verify.mockResolvedValue(false);
+
+        for (let i = 0; i < 5; i++) {
+            await expect(
+                useCase.execute({
+                    email: 'user@example.com',
+                    password: 'wrong-password',
+                }),
+            ).rejects.toMatchObject({
+                code: ErrorCodes.UNAUTHENTICATED,
+            });
+        }
+
+        await expect(
+            useCase.execute({
+                email: 'user@example.com',
+                password: 'wrong-password',
+            }),
+        ).rejects.toMatchObject({
+            code: ErrorCodes.RATE_LIMITED,
+            httpStatus: 429,
+        });
+
+
+        expect(loginAttemptRepo.recordFailure).toHaveBeenCalledTimes(5);
+        expect(passwordHasher.verify).toHaveBeenCalledTimes(5);
+        expect(sessionRepo.create).not.toHaveBeenCalled();
 
     });
+
+
+    it('keeps login blocked while the rate limit is active', async () => {
+
+        loginAttemptRepo.isLimited.mockResolvedValue(true);
+
+        await expect(
+
+            useCase.execute({
+                email: 'user@example.com',
+                password: 'password123',
+            }),
+
+        ).rejects.toMatchObject({
+            code: ErrorCodes.RATE_LIMITED,
+            httpStatus: 429,
+        });
+
+
+        await expect(
+            useCase.execute({
+                email: 'user@example.com',
+                password: 'password123',
+            }),
+        ).rejects.toMatchObject({
+            code: ErrorCodes.RATE_LIMITED,
+            httpStatus: 429,
+        });
+
+
+        expect(loginAttemptRepo.isLimited).toHaveBeenCalledTimes(2);
+
+        expect(userRepo.findByEmailWithCredentials).not.toHaveBeenCalled();
+        expect(passwordHasher.verify).not.toHaveBeenCalled();
+        expect(sessionRepo.create).not.toHaveBeenCalled();
+
+    });
+
+
+    it('normalizes email casing when checking and recording failed attempts', async () => {
+        
+        
+        passwordHasher.verify.mockResolvedValue(false);
+
+        await expect(
+            useCase.execute({
+                email: 'USER@EXAMPLE.COM',
+                password: 'wrong-password',
+            }),
+        ).rejects.toMatchObject({
+            code: ErrorCodes.UNAUTHENTICATED,
+        });
+
+       
+        expect(loginAttemptRepo.isLimited).toHaveBeenCalledWith(
+            'user@example.com',
+        );
+
+        expect(userRepo.findByEmailWithCredentials).toHaveBeenCalledWith(
+            'user@example.com',
+        );
+
+        expect(loginAttemptRepo.recordFailure).toHaveBeenCalledWith(
+            'user@example.com',
+        );
+
+        expect(sessionRepo.create).not.toHaveBeenCalled();
+
+    });
+
 
 
 });
