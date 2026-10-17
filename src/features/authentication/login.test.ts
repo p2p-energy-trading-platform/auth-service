@@ -11,18 +11,31 @@ import { LoginUseCase } from "./login.js";
 
 describe('LoginUseCase security tests', () => {
 
-    const userRepo = { findByEmailWithCredentials: vi.fn() };
-    const passwordHasher = { verify: vi.fn() };
-    const jwtSigner = { signAccessToken: vi.fn() };
-    const sessionRepo = { create: vi.fn() };
     
-    const loginAttemptRepo = { 
+    const userRepo = {
+        findByEmailWithCredentials: vi.fn<UserRepository['findByEmailWithCredentials']>(),
+    };
+
+    const passwordHasher = {
+        verify: vi.fn<PasswordHasher['verify']>(),
+    };
+
+    const jwtSigner = {
+        signAccessToken: vi.fn<JwtSigner['signAccessToken']>(),
+    };
+
+    const sessionRepo = {
+        create: vi.fn<SessionRepository['create']>(),
+    };
+
+    const loginAttemptRepo = {
         
-        isLimited: vi.fn(),
-        recordFailure: vi.fn(),
-        reset: vi.fn(),
+        isLimited: vi.fn<LoginAttemptRepository['isLimited']>(),
+        recordFailure: vi.fn<LoginAttemptRepository['recordFailure']>(),
+        reset: vi.fn<LoginAttemptRepository['reset']>(),
 
     };
+
 
     let useCase: LoginUseCase;
 
@@ -54,13 +67,21 @@ describe('LoginUseCase security tests', () => {
             passwordHash: 'stored-password-hash',
             status: 'ACTIVE',
             role: 'user',
-            createdAt: new Date().toISOString(),
+            createdAt: new Date(),
         
         });
 
         passwordHasher.verify.mockResolvedValue(true);
         jwtSigner.signAccessToken.mockResolvedValue('test-access-token');
-        sessionRepo.create.mockResolvedValue({ id: 'session-1' });
+        sessionRepo.create.mockResolvedValue({
+
+            id: 'session-1',
+            userId: 'user-1',
+            refreshTokenHash: 'test-refresh-token-hash',
+            expiresAt: new Date(Date.now() + 604800 * 1000).toISOString(),
+            revokedAt: null,
+
+        });
 
     });
 

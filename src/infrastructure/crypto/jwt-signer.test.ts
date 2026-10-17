@@ -189,6 +189,6 @@ describe('JwtSigner', () => {
         issuer: ISSUER,
         audience: AUDIENCE,
       }),
-    ).rejects.toMatchObject({ code: 'ERR_JWS_SIGNATURE_VERIFICATION' });
+    ).rejects.toMatchObject({ code: 'ERR_JWS_SIGNATURE_VERIFICATION_FAILED', });
   });
 });

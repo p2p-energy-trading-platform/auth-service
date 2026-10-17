@@ -8,16 +8,23 @@ import { RefreshUseCase } from './refresh.js';
 
 describe('RefreshUseCase security tests', () => {
 
-    const userRepo = { findById: vi.fn() };
-    const jwtSigner = { signAccessToken: vi.fn() };
+    
+    const userRepo = {
+        findById: vi.fn<UserRepository['findById']>(),
+    };
 
-    const sessionRepo = { 
+    const jwtSigner = {
+        signAccessToken: vi.fn<JwtSigner['signAccessToken']>(),
+    };
 
-        findActiveByRefreshTokenHash: vi.fn(),
-        revokeByRefreshTokenHash: vi.fn(),
-        create: vi.fn(),
+    const sessionRepo = {
+
+        findActiveByRefreshTokenHash: vi.fn<SessionRepository['findActiveByRefreshTokenHash']>(),
+        revokeByRefreshTokenHash: vi.fn<SessionRepository['revokeByRefreshTokenHash']>(),
+        create: vi.fn<SessionRepository['create']>(),
 
     };
+
 
     let useCase: RefreshUseCase;
 
@@ -43,7 +50,7 @@ describe('RefreshUseCase security tests', () => {
             name: 'Test User',
             status: 'ACTIVE',
             role: 'user',
-            createdAt: new Date().toISOString(),
+            createdAt: new Date(),
 
         });
 
@@ -60,7 +67,15 @@ describe('RefreshUseCase security tests', () => {
         });
 
         sessionRepo.revokeByRefreshTokenHash.mockResolvedValue(true);
-        sessionRepo.create.mockResolvedValue({ id: 'new-session-1' });
+        sessionRepo.create.mockResolvedValue({
+
+            id: 'new-session-1',
+            userId: 'user-1',
+            refreshTokenHash: 'new-token-hash',
+            expiresAt: new Date(Date.now() + 604800 * 1000).toISOString(),
+            revokedAt: null,
+
+        });
 
     });
 
@@ -100,7 +115,7 @@ describe('RefreshUseCase security tests', () => {
             name: 'Test User',
             status: 'SUSPENDED',
             role: 'user',
-            createdAt: new Date().toISOString(),
+            createdAt: new Date(),
 
         });
 

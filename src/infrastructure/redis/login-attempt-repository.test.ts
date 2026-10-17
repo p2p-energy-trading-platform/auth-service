@@ -6,10 +6,10 @@ import { LoginAttemptRepository } from './login-attempt-repository.js';
 
 const redis = {
 
-    incr: vi.fn(),
-    expire: vi.fn(),
-    get: vi.fn(),
-    del: vi.fn()
+    incr: vi.fn<RedisClient['incr']>(),
+    expire: vi.fn<RedisClient['expire']>(),
+    get: vi.fn<RedisClient['get']>(),
+    del: vi.fn<RedisClient['del']>(),
 
 } as unknown as RedisClient;
 
