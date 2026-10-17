@@ -30,13 +30,11 @@ import { CreateKycUploadUrlUseCase } from '../features/onboarding/create-kyc-upl
 import { S3FileStorage } from '../infrastructure/storage/s3-storage.js';
 import { LoginWithGoogleUseCase } from '../features/authentication/login-with-google.js';
 import { GoogleClient } from '../infrastructure/oauth/google-client.js';
-import { LoginAttemptRepository } from '../infrastructure/redis/login-attempt-repository.js';
 
 export default fp(async (fastify) => {
   const userRepository = new UserRepository(fastify.db);
   const authorizationRepository = new AuthorizationRepository(fastify.db);
   const sessionRepository = new SessionRepository(fastify.db, fastify.redis);
-  const loginAttemptRepository = new LoginAttemptRepository(fastify.redis);
   const passwordHasher = new PasswordHasher();
   const otpRepository = new OTPRepository(fastify.redis);
 
@@ -67,7 +65,6 @@ export default fp(async (fastify) => {
     passwordHasher,
     fastify.jwtSigner,
     sessionRepository,
-    loginAttemptRepository,
     fastify.config.AUTH_ACCESS_TOKEN_TTL_SECONDS,
     fastify.config.AUTH_REFRESH_TOKEN_TTL_SECONDS,
   );
