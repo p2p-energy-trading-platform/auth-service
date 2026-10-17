@@ -41,31 +41,25 @@ export class LoginUseCase {
 
     // Stop processing login attempts when the limit is reached.
     if (await this.loginAttemptRepo.isLimited(normalizedEmail)) {
-
       throw new AppError(
         ErrorCodes.RATE_LIMITED,
         'Too many failed login attempts. Please try again later.',
         429,
       );
-
     }
 
     const user = await this.userRepo.findByEmailWithCredentials(normalizedEmail);
 
     if (!user) {
-
       await this.loginAttemptRepo.recordFailure(normalizedEmail);
       throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Invalid email or password');
-
     }
 
     const passwordValid = await this.passwordHasher.verify(user.passwordHash, input.password);
 
     if (!passwordValid) {
-
       await this.loginAttemptRepo.recordFailure(normalizedEmail);
       throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Invalid email or password');
-
     }
 
     if (user.status !== 'ACTIVE' && user.status !== 'PENDING') {

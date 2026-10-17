@@ -10,10 +10,7 @@ export class KeyService {
 
   getJwks(): JwksResponse {
     return {
-      keys: [
-        this.keyProvider.publicJwk,
-        ...this.previousPublicJwks,
-      ],
+      keys: [this.keyProvider.publicJwk, ...this.previousPublicJwks],
     };
   }
 }

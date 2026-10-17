@@ -1,51 +1,36 @@
 import type { RedisClient } from './client.js';
 import { loginAttemptsKey } from './keys.js';
 
+export class LoginAttemptRepository {
+  constructor(
+    private readonly redis: RedisClient,
+    private readonly maxAttempts = 5,
+    private readonly windowSeconds = 300,
+  ) {}
 
-export class LoginAttemptRepository{
+  async recordFailure(email: string): Promise<number> {
+    const key = loginAttemptsKey(email);
 
-    constructor(
+    const attempts = await this.redis.incr(key);
 
-        private readonly redis: RedisClient,
-        private readonly maxAttempts = 5,
-        private readonly windowSeconds = 300
-
-    ){
-
+    if (attempts === 1) {
+      await this.redis.expire(key, this.windowSeconds);
     }
 
-    async recordFailure(email: string): Promise<number>{
+    return attempts;
+  }
 
-        const key = loginAttemptsKey(email);
+  async getAttempts(email: string): Promise<number> {
+    const attempts = await this.redis.get(loginAttemptsKey(email));
 
-        const attempts = await this.redis.incr(key);
+    return attempts === null ? 0 : Number(attempts);
+  }
 
-        if(attempts === 1){
-            await this.redis.expire(key, this.windowSeconds);
-        }
+  async isLimited(email: string): Promise<boolean> {
+    return (await this.getAttempts(email)) >= this.maxAttempts;
+  }
 
-        return attempts;
-
-    }
-
-    async getAttempts(email: string): Promise<number>{
-
-        const attempts = await this.redis.get(loginAttemptsKey(email));
-
-        return attempts === null ? 0 : Number(attempts);
-
-    }
-
-    async isLimited(email: string): Promise<boolean> {
-
-        return (await this.getAttempts(email)) >= this.maxAttempts;
-
-    }
-
-    async reset(email: string): Promise<void> {
-
-        await this.redis.del(loginAttemptsKey(email));
-
-    }
-
+  async reset(email: string): Promise<void> {
+    await this.redis.del(loginAttemptsKey(email));
+  }
 }
