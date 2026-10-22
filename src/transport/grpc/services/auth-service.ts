@@ -15,6 +15,7 @@ import type { RequestEmailChangeUseCase } from '../../../features/authentication
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
 import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
 import type { CreateKycUploadUrlUseCase } from '../../../features/onboarding/create-kyc-upload-url.js';
+import type { ExtractKycNicOcrUseCase } from '../../../features/onboarding/extract-kyc-nic-ocr.js';
 
 import {
   AuthService,
@@ -36,6 +37,7 @@ import {
   ResendOtpResponseSchema,
   SubmitKycResponseSchema,
   CreateKycUploadUrlResponseSchema,
+  ExtractKycNicOcrResponseSchema,
   KycSubmissionSchema,
   LoginWithGoogleResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
@@ -75,6 +77,7 @@ interface AuthServiceDependencies {
   resendOtpUseCase: ResendOtpUseCase;
   submitKycUseCase: SubmitKycUseCase;
   createKycUploadUrlUseCase: CreateKycUploadUrlUseCase;
+  extractKycNicOcrUseCase: ExtractKycNicOcrUseCase;
   loginWithGoogleUseCase: LoginWithGoogleUseCase;
 }
 
@@ -401,6 +404,33 @@ export function createAuthServiceImplementation(
       }
     },
 
+    extractKycNicOcr: async (req, context) => {
+      const userId = context.requestHeader.get('x-gridx-user-id');
+
+      if (!userId) {
+        throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+      }
+
+      try {
+        const result = await deps.extractKycNicOcrUseCase.execute({
+          userId,
+          objectKey: req.objectKey,
+        });
+
+        return create(ExtractKycNicOcrResponseSchema, {
+          fullName: result.fullName ?? '',
+          dateOfBirth: result.dateOfBirth
+            ? create(DateSchema, parseKycDate(result.dateOfBirth))
+            : undefined,
+          nicNumber: result.nicNumber ?? '',
+        });
+      } catch (error) {
+        // Never log OCR text, document contents, or extracted identity fields.
+        deps.logger.error('Failed to extract KYC NIC OCR');
+        throw toGrpcError(error);
+      }
+    },
+
     submitKyc: async (req, context) => {
       try {
         const userId = context.requestHeader.get('x-gridx-user-id');
@@ -413,7 +443,7 @@ export function createAuthServiceImplementation(
           userId,
           fullName: req.fullName,
           dateOfBirth: req.dateOfBirth ? formatKycDate(req.dateOfBirth) : '',
-          dubaiId: req.dubaiId,
+          nicNumber: req.nicNumber,
           documentPath: req.documentPath,
         });
 
@@ -423,7 +453,7 @@ export function createAuthServiceImplementation(
             userId: submission.userId,
             fullName: submission.fullName,
             dateOfBirth: create(DateSchema, parseKycDate(submission.dateOfBirth)),
-            dubaiId: submission.dubaiId,
+            nicNumber: submission.nicNumber,
             documentPath: submission.documentPath,
             state: toKycState(submission.state),
             rejectionReason: submission.rejectionReason ?? '',

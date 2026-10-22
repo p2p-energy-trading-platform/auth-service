@@ -92,4 +92,82 @@ describe('S3FileStorage', () => {
       );
     });
   });
+
+  describe('getObjectBytes', () => {
+    it('returns bytes from the stored object', async () => {
+      const { Readable } = await import('node:stream');
+      vi.spyOn(S3Client.prototype, 'send').mockResolvedValue({
+        ContentLength: 5,
+        Body: Readable.from([Buffer.from('hello')]),
+      } as never);
+
+      const result = await createStorage().getObjectBytes('kyc/user-1/doc.jpg');
+
+      expect(result).toEqual(new Uint8Array(Buffer.from('hello')));
+    });
+
+    it('returns null when the object does not exist', async () => {
+      vi.spyOn(S3Client.prototype, 'send').mockRejectedValue(
+        Object.assign(new Error('NotFound'), {
+          name: 'NotFound',
+          $metadata: { httpStatusCode: 404 },
+        }) as never,
+      );
+
+      await expect(
+        createStorage().getObjectBytes('kyc/user-1/missing.jpg'),
+      ).resolves.toBeNull();
+    });
+
+    it('rejects an object whose reported size exceeds the limit', async () => {
+      const { Readable } = await import('node:stream');
+      const body = Readable.from([Buffer.from('too large')]);
+      vi.spyOn(S3Client.prototype, 'send').mockResolvedValue({
+        ContentLength: 11,
+        Body: body,
+      } as never);
+
+      await expect(
+        createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10),
+      ).rejects.toThrow(/maximum read size/i);
+    });
+
+    it('rejects a streamed object that exceeds the limit when size is unknown', async () => {
+      const { Readable } = await import('node:stream');
+      vi.spyOn(S3Client.prototype, 'send').mockResolvedValue({
+        Body: Readable.from([Buffer.from('123456'), Buffer.from('78901')]),
+      } as never);
+
+      await expect(
+        createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10),
+      ).rejects.toThrow(/maximum read size/i);
+    });
+
+    it('rejects invalid read limits', async () => {
+      const send = vi.spyOn(S3Client.prototype, 'send');
+
+      await expect(
+        createStorage().getObjectBytes('kyc/user-1/doc.jpg', 0),
+      ).rejects.toThrow(/maximum object read size/i);
+
+      await expect(
+        createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10 * 1024 * 1024 + 1),
+      ).rejects.toThrow(/maximum object read size/i);
+
+      expect(send).not.toHaveBeenCalled();
+    });
+
+    it('rethrows non-404 storage errors', async () => {
+      vi.spyOn(S3Client.prototype, 'send').mockRejectedValue(
+        Object.assign(new Error('Access Denied'), {
+          name: 'AccessDenied',
+          $metadata: { httpStatusCode: 403 },
+        }) as never,
+      );
+
+      await expect(
+        createStorage().getObjectBytes('kyc/user-1/doc.jpg'),
+      ).rejects.toThrow('Access Denied');
+    });
+  });
 });

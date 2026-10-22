@@ -11,9 +11,11 @@ import type { ResetPasswordUseCase } from '../../../features/authentication/rese
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
 import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
 import type { CreateKycUploadUrlUseCase } from '../../../features/onboarding/create-kyc-upload-url.js';
+import type { ExtractKycNicOcrUseCase } from '../../../features/onboarding/extract-kyc-nic-ocr.js';
 import { describe, expect, it, vi } from 'vitest';
 import { Code, ConnectError } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
+import { DateSchema } from '@p2p-energy-trading-platform/typescript-sdk/gen/google/type/date_pb';
 import {
   GetProfileRequestSchema,
   UpdateProfileRequestSchema,
@@ -22,6 +24,7 @@ import {
   VerifyEmailChangeRequestSchema,
   SubmitKycRequestSchema,
   CreateKycUploadUrlRequestSchema,
+  ExtractKycNicOcrRequestSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { AppError } from '../../../errors/app-error.js';
 import { ErrorCodes } from '../../../errors/codes.js';
@@ -69,6 +72,9 @@ type MockDependencies = {
   createKycUploadUrlUseCase: {
     execute: ReturnType<typeof vi.fn<CreateKycUploadUrlUseCase['execute']>>;
   };
+  extractKycNicOcrUseCase: {
+    execute: ReturnType<typeof vi.fn<ExtractKycNicOcrUseCase['execute']>>;
+  };
 };
 
 function createDependencies(): MockDependencies {
@@ -114,6 +120,9 @@ function createDependencies(): MockDependencies {
     },
     createKycUploadUrlUseCase: {
       execute: vi.fn<CreateKycUploadUrlUseCase['execute']>(),
+    },
+    extractKycNicOcrUseCase: {
+      execute: vi.fn<ExtractKycNicOcrUseCase['execute']>(),
     },
   };
 }
@@ -240,7 +249,7 @@ describe('AuthService gRPC implementation', () => {
       userId: 'user-123',
       fullName: 'Jane Doe',
       dateOfBirth: '1990-01-01',
-      dubaiId: '784-1990-1234567-1',
+      nicNumber: '199012012345',
       documentPath: 'uploads/document.pdf',
       state: 'PENDING',
       rejectionReason: null,
@@ -252,8 +261,8 @@ describe('AuthService gRPC implementation', () => {
     const service = createAuthServiceImplementation(deps as never);
     const request = create(SubmitKycRequestSchema, {
       fullName: ' Jane Doe ',
-      dateOfBirth: { year: 1990, month: 1, day: 1 },
-      dubaiId: ' 784-1990-1234567-1 ',
+      dateOfBirth: create(DateSchema, { year: 1990, month: 1, day: 1 }),
+      nicNumber: ' 199012012345 ',
       documentPath: ' uploads/document.pdf ',
     });
 
@@ -263,7 +272,7 @@ describe('AuthService gRPC implementation', () => {
       userId: 'user-123',
       fullName: ' Jane Doe ',
       dateOfBirth: '1990-01-01',
-      dubaiId: ' 784-1990-1234567-1 ',
+      nicNumber: ' 199012012345 ',
       documentPath: ' uploads/document.pdf ',
     });
     expect(response.submission?.userId).toBe('user-123');
@@ -285,6 +294,81 @@ describe('AuthService gRPC implementation', () => {
     });
 
     expect(deps.submitKycUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('extracts NIC OCR suggestions for the authenticated user', async () => {
+    const deps = createDependencies();
+    deps.extractKycNicOcrUseCase.execute.mockResolvedValue({
+      fullName: 'Jane Doe',
+      dateOfBirth: '1990-01-01',
+      nicNumber: '199012012345',
+    });
+
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(ExtractKycNicOcrRequestSchema, {
+      objectKey: 'kyc/user-123/document.pdf',
+    });
+
+    const response = await service.extractKycNicOcr(
+      request,
+      createContext('user-123'),
+    );
+
+    expect(deps.extractKycNicOcrUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-123',
+      objectKey: 'kyc/user-123/document.pdf',
+    });
+    expect(response.fullName).toBe('Jane Doe');
+    expect(response.dateOfBirth).toMatchObject({
+      year: 1990,
+      month: 1,
+      day: 1,
+    });
+    expect(response.nicNumber).toBe('199012012345');
+  });
+
+  it('requires authentication for ExtractKycNicOcr', async () => {
+    const deps = createDependencies();
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(ExtractKycNicOcrRequestSchema, {
+      objectKey: 'kyc/user-123/document.pdf',
+    });
+
+    await expect(
+      service.extractKycNicOcr(request, createContext()),
+    ).rejects.toMatchObject({
+      code: ErrorCodes.UNAUTHENTICATED,
+    });
+
+    expect(deps.extractKycNicOcrUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('does not log OCR errors or extracted identity data', async () => {
+    const deps = createDependencies();
+    deps.extractKycNicOcrUseCase.execute.mockRejectedValue(
+      new Error('OCR failed for Jane Doe NIC 199012012345'),
+    );
+
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(ExtractKycNicOcrRequestSchema, {
+      objectKey: 'kyc/user-123/document.pdf',
+    });
+
+    await expect(
+      service.extractKycNicOcr(request, createContext('user-123')),
+    ).rejects.toMatchObject({
+      code: Code.Internal,
+    });
+
+    expect(deps.logger.error).toHaveBeenCalledWith(
+      'Failed to extract KYC NIC OCR',
+    );
+    expect(deps.logger.error).not.toHaveBeenCalledWith(
+      expect.stringContaining('199012012345'),
+    );
+    expect(deps.logger.error).not.toHaveBeenCalledWith(
+      expect.stringContaining('Jane Doe'),
+    );
   });
 
   it('creates a KYC upload URL for the authenticated user', async () => {

@@ -16,6 +16,7 @@ function setup(currentState?: KycSubmission['state']) {
       .fn<FileStorage['createUploadUrl']>()
       .mockResolvedValue('http://localhost:9000/signed-url'),
     getObjectInfo: vi.fn<FileStorage['getObjectInfo']>(),
+    getObjectBytes: vi.fn<FileStorage['getObjectBytes']>(),
   };
 
   return { kyc, storage, useCase: new CreateKycUploadUrlUseCase(kyc as never, storage) };
