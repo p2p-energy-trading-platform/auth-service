@@ -1,14 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  extractNicOcrText,
-  type NicOcrCommandRunner,
-} from './nic-ocr-engine.js';
+import { extractNicOcrText, type NicOcrCommandRunner } from './nic-ocr-engine.js';
 
 const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
-const png = new Uint8Array([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-]);
+const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const pdf = new TextEncoder().encode('%PDF-1.4\n%%EOF');
 
 function runnerReturning(stdout: string): NicOcrCommandRunner {
@@ -19,29 +14,19 @@ describe('extractNicOcrText', () => {
   it('runs Tesseract for a JPEG and returns recognized text', async () => {
     const runner = runnerReturning('NIC: 199012012345');
 
-    await expect(
-      extractNicOcrText(jpeg, 'image/jpeg', runner),
-    ).resolves.toBe('NIC: 199012012345');
+    await expect(extractNicOcrText(jpeg, 'image/jpeg', runner)).resolves.toBe('NIC: 199012012345');
 
     expect(runner).toHaveBeenCalledTimes(2);
     expect(runner).toHaveBeenNthCalledWith(
       1,
       'python3',
-      expect.arrayContaining([
-        expect.stringContaining('preprocess-nic-image.py'),
-      ]),
+      expect.arrayContaining([expect.stringContaining('preprocess-nic-image.py')]),
       expect.any(Object),
     );
     expect(runner).toHaveBeenNthCalledWith(
       2,
       'tesseract',
-      expect.arrayContaining([
-        'stdout',
-        '-l',
-        'eng',
-        '--psm',
-        '1',
-      ]),
+      expect.arrayContaining(['stdout', '-l', 'eng', '--psm', '1']),
       expect.any(Object),
     );
   });
@@ -49,17 +34,17 @@ describe('extractNicOcrText', () => {
   it('accepts PNG images', async () => {
     const runner = runnerReturning('NATIONAL IDENTITY CARD');
 
-    await expect(
-      extractNicOcrText(png, 'image/png', runner),
-    ).resolves.toBe('NATIONAL IDENTITY CARD');
+    await expect(extractNicOcrText(png, 'image/png', runner)).resolves.toBe(
+      'NATIONAL IDENTITY CARD',
+    );
   });
 
   it('rejects a MIME type that does not match the file signature', async () => {
     const runner = runnerReturning('');
 
-    await expect(
-      extractNicOcrText(jpeg, 'image/png', runner),
-    ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+    await expect(extractNicOcrText(jpeg, 'image/png', runner)).rejects.toMatchObject({
+      code: 'INVALID_ARGUMENT',
+    });
 
     expect(runner).not.toHaveBeenCalled();
   });
@@ -67,9 +52,9 @@ describe('extractNicOcrText', () => {
   it('rejects unsupported MIME types', async () => {
     const runner = runnerReturning('');
 
-    await expect(
-      extractNicOcrText(jpeg, 'image/gif', runner),
-    ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+    await expect(extractNicOcrText(jpeg, 'image/gif', runner)).rejects.toMatchObject({
+      code: 'INVALID_ARGUMENT',
+    });
 
     expect(runner).not.toHaveBeenCalled();
   });
@@ -77,9 +62,9 @@ describe('extractNicOcrText', () => {
   it('rejects empty input', async () => {
     const runner = runnerReturning('');
 
-    await expect(
-      extractNicOcrText(new Uint8Array(), 'image/jpeg', runner),
-    ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+    await expect(extractNicOcrText(new Uint8Array(), 'image/jpeg', runner)).rejects.toMatchObject({
+      code: 'INVALID_ARGUMENT',
+    });
 
     expect(runner).not.toHaveBeenCalled();
   });
@@ -88,11 +73,7 @@ describe('extractNicOcrText', () => {
     const runner = runnerReturning('');
 
     await expect(
-      extractNicOcrText(
-        new Uint8Array(10 * 1024 * 1024 + 1),
-        'image/jpeg',
-        runner,
-      ),
+      extractNicOcrText(new Uint8Array(10 * 1024 * 1024 + 1), 'image/jpeg', runner),
     ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
 
     expect(runner).not.toHaveBeenCalled();
@@ -111,16 +92,12 @@ describe('extractNicOcrText', () => {
   it('rejects PDFs containing more than two pages', async () => {
     const runner = runnerReturning('Pages:          3');
 
-    await expect(
-      extractNicOcrText(pdf, 'application/pdf', runner),
-    ).rejects.toMatchObject({ code: 'INVALID_ARGUMENT' });
+    await expect(extractNicOcrText(pdf, 'application/pdf', runner)).rejects.toMatchObject({
+      code: 'INVALID_ARGUMENT',
+    });
 
     expect(runner).toHaveBeenCalledTimes(1);
-    expect(runner).toHaveBeenCalledWith(
-      'pdfinfo',
-      expect.any(Array),
-      expect.any(Object),
-    );
+    expect(runner).toHaveBeenCalledWith('pdfinfo', expect.any(Array), expect.any(Object));
   });
 
   it('does not expose subprocess error details to callers', async () => {
@@ -128,9 +105,9 @@ describe('extractNicOcrText', () => {
       throw new Error('sensitive subprocess output');
     });
 
-    await expect(
-      extractNicOcrText(jpeg, 'image/jpeg', runner),
-    ).rejects.toMatchObject({ code: 'INTERNAL' });
+    await expect(extractNicOcrText(jpeg, 'image/jpeg', runner)).rejects.toMatchObject({
+      code: 'INTERNAL',
+    });
   });
 });
 
@@ -160,9 +137,9 @@ describe('PDF OCR rendering', () => {
       throw new Error('Unexpected command');
     });
 
-    await expect(
-      extractNicOcrText(pdf, 'application/pdf', runner),
-    ).resolves.toBe('NIC: 199012012345');
+    await expect(extractNicOcrText(pdf, 'application/pdf', runner)).resolves.toBe(
+      'NIC: 199012012345',
+    );
 
     expect(runner).toHaveBeenCalledTimes(4);
     expect(runner.mock.calls.map(([command]) => command)).toEqual([
@@ -200,17 +177,15 @@ describe('PDF OCR rendering', () => {
       }
 
       if (command === 'tesseract') {
-        return args[0]?.includes('-1.png.processed.png')
-          ? 'First page'
-          : 'Second page';
+        return args[0]?.includes('-1.png.processed.png') ? 'First page' : 'Second page';
       }
 
       throw new Error('Unexpected command');
     });
 
-    await expect(
-      extractNicOcrText(pdf, 'application/pdf', runner),
-    ).resolves.toBe('First page\nSecond page');
+    await expect(extractNicOcrText(pdf, 'application/pdf', runner)).resolves.toBe(
+      'First page\nSecond page',
+    );
 
     expect(runner).toHaveBeenCalledTimes(6);
     expect(runner.mock.calls.map(([command]) => command)).toEqual([

@@ -114,9 +114,7 @@ describe('S3FileStorage', () => {
         }) as never,
       );
 
-      await expect(
-        createStorage().getObjectBytes('kyc/user-1/missing.jpg'),
-      ).resolves.toBeNull();
+      await expect(createStorage().getObjectBytes('kyc/user-1/missing.jpg')).resolves.toBeNull();
     });
 
     it('rejects an object whose reported size exceeds the limit', async () => {
@@ -127,9 +125,9 @@ describe('S3FileStorage', () => {
         Body: body,
       } as never);
 
-      await expect(
-        createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10),
-      ).rejects.toThrow(/maximum read size/i);
+      await expect(createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10)).rejects.toThrow(
+        /maximum read size/i,
+      );
     });
 
     it('rejects a streamed object that exceeds the limit when size is unknown', async () => {
@@ -138,17 +136,17 @@ describe('S3FileStorage', () => {
         Body: Readable.from([Buffer.from('123456'), Buffer.from('78901')]),
       } as never);
 
-      await expect(
-        createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10),
-      ).rejects.toThrow(/maximum read size/i);
+      await expect(createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10)).rejects.toThrow(
+        /maximum read size/i,
+      );
     });
 
     it('rejects invalid read limits', async () => {
       const send = vi.spyOn(S3Client.prototype, 'send');
 
-      await expect(
-        createStorage().getObjectBytes('kyc/user-1/doc.jpg', 0),
-      ).rejects.toThrow(/maximum object read size/i);
+      await expect(createStorage().getObjectBytes('kyc/user-1/doc.jpg', 0)).rejects.toThrow(
+        /maximum object read size/i,
+      );
 
       await expect(
         createStorage().getObjectBytes('kyc/user-1/doc.jpg', 10 * 1024 * 1024 + 1),
@@ -165,9 +163,9 @@ describe('S3FileStorage', () => {
         }) as never,
       );
 
-      await expect(
-        createStorage().getObjectBytes('kyc/user-1/doc.jpg'),
-      ).rejects.toThrow('Access Denied');
+      await expect(createStorage().getObjectBytes('kyc/user-1/doc.jpg')).rejects.toThrow(
+        'Access Denied',
+      );
     });
   });
 });

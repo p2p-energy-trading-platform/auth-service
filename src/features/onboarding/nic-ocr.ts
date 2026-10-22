@@ -21,9 +21,7 @@ function isValidDate(year: number, month: number, day: number): boolean {
   const date = new Date(Date.UTC(year, month - 1, day));
 
   return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
   );
 }
 
@@ -54,9 +52,7 @@ function dateFromNic(nic: string): string | null {
   // Sri Lankan NICs encode female dates using an offset of 500.
   if (dayOfYear > 500) dayOfYear -= 500;
 
-  const daysInYear = new Date(Date.UTC(year, 1, 29)).getUTCDate() === 29
-    ? 366
-    : 365;
+  const daysInYear = new Date(Date.UTC(year, 1, 29)).getUTCDate() === 29 ? 366 : 365;
 
   if (dayOfYear < 1 || dayOfYear > daysInYear) return null;
 
@@ -72,10 +68,7 @@ function dateFromNic(nic: string): string | null {
 export function isValidSriLankanNicNumber(value: string): boolean {
   const nic = value.trim().toUpperCase();
 
-  return (
-    (/^\d{12}$/.test(nic) || /^\d{9}[VX]$/.test(nic)) &&
-    dateFromNic(nic) !== null
-  );
+  return (/^\d{12}$/.test(nic) || /^\d{9}[VX]$/.test(nic)) && dateFromNic(nic) !== null;
 }
 
 function extractNic(text: string): string | null {
@@ -102,10 +95,7 @@ function extractNic(text: string): string | null {
       .replace(/[O]/g, '0')
       .replace(/[IL]/g, '1');
 
-    if (
-      (/^\d{12}$/.test(nic) || /^\d{9}[VX]$/.test(nic)) &&
-      dateFromNic(nic) !== null
-    ) {
+    if ((/^\d{12}$/.test(nic) || /^\d{9}[VX]$/.test(nic)) && dateFromNic(nic) !== null) {
       return nic;
     }
   }
@@ -146,9 +136,7 @@ function extractFullName(text: string): string | null {
     const line = lines[index];
     if (line === undefined) continue;
 
-    const labelled = line.match(
-      /^\s*(?:FULL\s+NAME|NAME\s+IN\s+FULL|NAME)\s*:?\s*(.*?)\s*$/i,
-    );
+    const labelled = line.match(/^\s*(?:FULL\s+NAME|NAME\s+IN\s+FULL|NAME)\s*:?\s*(.*?)\s*$/i);
 
     if (!labelled) continue;
 
@@ -162,10 +150,7 @@ function extractFullName(text: string): string | null {
           // OCR may split the NAME label across adjacent lines.
           // Strip only a recognizable label fragment, not arbitrary text.
           capturedName = candidate
-            .replace(
-              /^(?:ame|name|full\s+name|name\s+in\s+full)\s*:\s*/i,
-              '',
-            )
+            .replace(/^(?:ame|name|full\s+name|name\s+in\s+full)\s*:\s*/i, '')
             .trim();
           break;
         }
@@ -196,13 +181,9 @@ function extractFullName(text: string): string | null {
   return null;
 }
 
-export function parseSriLankanNicOcrText(
-  text: string,
-): SriLankanNicOcrResult {
+export function parseSriLankanNicOcrText(text: string): SriLankanNicOcrResult {
   const nicNumber = extractNic(text);
-  const dateOfBirth = extractPrintedDate(text) ?? (
-    nicNumber ? dateFromNic(nicNumber) : null
-  );
+  const dateOfBirth = extractPrintedDate(text) ?? (nicNumber ? dateFromNic(nicNumber) : null);
 
   return {
     nicNumber,

@@ -309,10 +309,7 @@ describe('AuthService gRPC implementation', () => {
       objectKey: 'kyc/user-123/document.pdf',
     });
 
-    const response = await service.extractKycNicOcr(
-      request,
-      createContext('user-123'),
-    );
+    const response = await service.extractKycNicOcr(request, createContext('user-123'));
 
     expect(deps.extractKycNicOcrUseCase.execute).toHaveBeenCalledWith({
       userId: 'user-123',
@@ -334,9 +331,7 @@ describe('AuthService gRPC implementation', () => {
       objectKey: 'kyc/user-123/document.pdf',
     });
 
-    await expect(
-      service.extractKycNicOcr(request, createContext()),
-    ).rejects.toMatchObject({
+    await expect(service.extractKycNicOcr(request, createContext())).rejects.toMatchObject({
       code: ErrorCodes.UNAUTHENTICATED,
     });
 
@@ -360,15 +355,9 @@ describe('AuthService gRPC implementation', () => {
       code: Code.Internal,
     });
 
-    expect(deps.logger.error).toHaveBeenCalledWith(
-      'Failed to extract KYC NIC OCR',
-    );
-    expect(deps.logger.error).not.toHaveBeenCalledWith(
-      expect.stringContaining('199012012345'),
-    );
-    expect(deps.logger.error).not.toHaveBeenCalledWith(
-      expect.stringContaining('Jane Doe'),
-    );
+    expect(deps.logger.error).toHaveBeenCalledWith('Failed to extract KYC NIC OCR');
+    expect(deps.logger.error).not.toHaveBeenCalledWith(expect.stringContaining('199012012345'));
+    expect(deps.logger.error).not.toHaveBeenCalledWith(expect.stringContaining('Jane Doe'));
   });
 
   it('creates a KYC upload URL for the authenticated user', async () => {

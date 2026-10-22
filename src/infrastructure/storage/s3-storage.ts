@@ -1,4 +1,9 @@
-import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { CreateUploadUrlInput, FileStorage, StoredObjectInfo } from './provider.js';
 
@@ -79,7 +84,7 @@ export class S3FileStorage implements FileStorage {
       }
 
       if (result.ContentLength !== undefined && result.ContentLength > maxBytes) {
-        destroyBodyIfSupported(result.Body)
+        destroyBodyIfSupported(result.Body);
         throw new RangeError('Stored object exceeds the maximum read size');
       }
 
@@ -91,7 +96,7 @@ export class S3FileStorage implements FileStorage {
         totalBytes += bytes.byteLength;
 
         if (totalBytes > maxBytes) {
-          destroyBodyIfSupported(result.Body)
+          destroyBodyIfSupported(result.Body);
           throw new RangeError('Stored object exceeds the maximum read size');
         }
 

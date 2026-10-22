@@ -50,10 +50,7 @@ export class SubmitKycUseCase {
     }
 
     if (!isValidSriLankanNicNumber(nicNumber)) {
-      throw new AppError(
-        ErrorCodes.INVALID_ARGUMENT,
-        'Enter a valid Sri Lankan NIC number',
-      );
+      throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Enter a valid Sri Lankan NIC number');
     }
 
     if (nicNumber.length > 12) {

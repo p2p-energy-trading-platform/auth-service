@@ -32,11 +32,7 @@ export type NicOcrCommandRunner = (
   options: NicOcrCommandOptions,
 ) => Promise<string>;
 
-const defaultCommandRunner: NicOcrCommandRunner = async (
-  command,
-  args,
-  options,
-) => {
+const defaultCommandRunner: NicOcrCommandRunner = async (command, args, options) => {
   const result = await execFile(command, args, {
     timeout: options.timeout,
     maxBuffer: options.maxBuffer,
@@ -65,19 +61,13 @@ function processingFailed(): AppError {
 
 function hasSignature(bytes: Uint8Array, contentType: string): boolean {
   if (contentType === 'image/jpeg') {
-    return (
-      bytes.length >= 3 &&
-      bytes[0] === 0xff &&
-      bytes[1] === 0xd8 &&
-      bytes[2] === 0xff
-    );
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   }
 
   if (contentType === 'image/png') {
     const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
     return (
-      bytes.length >= signature.length &&
-      signature.every((byte, index) => bytes[index] === byte)
+      bytes.length >= signature.length && signature.every((byte, index) => bytes[index] === byte)
     );
   }
 
@@ -106,26 +96,12 @@ async function runCommand(
   }
 }
 
-async function runTesseract(
-  imagePath: string,
-  runner: NicOcrCommandRunner,
-): Promise<string> {
+async function runTesseract(imagePath: string, runner: NicOcrCommandRunner): Promise<string> {
   const processedImagePath = `${imagePath}.processed.png`;
 
-  await runCommand(runner, 'python3', [
-    PREPROCESS_SCRIPT_PATH,
-    imagePath,
-    processedImagePath,
-  ]);
+  await runCommand(runner, 'python3', [PREPROCESS_SCRIPT_PATH, imagePath, processedImagePath]);
 
-  return runCommand(runner, 'tesseract', [
-    processedImagePath,
-    'stdout',
-    '-l',
-    'eng',
-    '--psm',
-    '1',
-  ]);
+  return runCommand(runner, 'tesseract', [processedImagePath, 'stdout', '-l', 'eng', '--psm', '1']);
 }
 
 async function extractFromPdf(
@@ -144,11 +120,7 @@ async function extractFromPdf(
   const pageMatch = info.match(/^\s*Pages:\s*(\d+)\s*$/im);
   const pageCount = pageMatch?.[1] ? Number(pageMatch[1]) : NaN;
 
-  if (
-    !Number.isInteger(pageCount) ||
-    pageCount < 1 ||
-    pageCount > MAX_PDF_PAGES
-  ) {
+  if (!Number.isInteger(pageCount) || pageCount < 1 || pageCount > MAX_PDF_PAGES) {
     throw invalidDocument();
   }
 
@@ -167,16 +139,9 @@ async function extractFromPdf(
 
   if (pageCount === 1) renderArgs.push('-singlefile');
 
-  await runCommand(runner, 'pdftoppm', [
-    ...renderArgs,
-    pdfPath,
-    prefix,
-  ]);
+  await runCommand(runner, 'pdftoppm', [...renderArgs, pdfPath, prefix]);
 
-  const imagePaths =
-    pageCount === 1
-      ? [`${prefix}.png`]
-      : [`${prefix}-1.png`, `${prefix}-2.png`];
+  const imagePaths = pageCount === 1 ? [`${prefix}.png`] : [`${prefix}-1.png`, `${prefix}-2.png`];
 
   const textParts: string[] = [];
 
@@ -192,11 +157,7 @@ export async function extractNicOcrText(
   contentType: string,
   runner: NicOcrCommandRunner = defaultCommandRunner,
 ): Promise<string> {
-  if (
-    bytes.length === 0 ||
-    bytes.length > NIC_OCR_MAX_BYTES ||
-    !hasSignature(bytes, contentType)
-  ) {
+  if (bytes.length === 0 || bytes.length > NIC_OCR_MAX_BYTES || !hasSignature(bytes, contentType)) {
     throw invalidDocument();
   }
 
@@ -205,11 +166,7 @@ export async function extractNicOcrText(
   try {
     directory = await mkdtemp(join(tmpdir(), 'gridx-nic-ocr-'));
     const extension =
-      contentType === 'image/jpeg'
-        ? 'jpg'
-        : contentType === 'image/png'
-          ? 'png'
-          : 'pdf';
+      contentType === 'image/jpeg' ? 'jpg' : contentType === 'image/png' ? 'png' : 'pdf';
 
     const inputPath = join(directory, `input.${extension}`);
     await writeFile(inputPath, bytes, { mode: 0o600 });

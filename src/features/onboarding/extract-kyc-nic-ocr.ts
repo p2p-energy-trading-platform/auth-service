@@ -14,10 +14,7 @@ export interface ExtractKycNicOcrInput {
   objectKey: string;
 }
 
-export type NicOcrTextExtractor = (
-  bytes: Uint8Array,
-  contentType: string,
-) => Promise<string>;
+export type NicOcrTextExtractor = (bytes: Uint8Array, contentType: string) => Promise<string>;
 
 function invalidDocument(): AppError {
   return new AppError(
@@ -38,11 +35,7 @@ export class ExtractKycNicOcrUseCase {
     const objectKey = input.objectKey.trim();
 
     if (!userId) {
-      throw new AppError(
-        ErrorCodes.UNAUTHENTICATED,
-        'Authenticated user is required.',
-        401,
-      );
+      throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required.', 401);
     }
 
     if (!objectKey) {
@@ -50,8 +43,8 @@ export class ExtractKycNicOcrUseCase {
     }
 
     if (!isOwnKycDocumentKey(userId, objectKey)) {
-      const belongsToAnotherUser = objectKey.startsWith('kyc/')
-        && !objectKey.startsWith(`kyc/${userId}/`);
+      const belongsToAnotherUser =
+        objectKey.startsWith('kyc/') && !objectKey.startsWith(`kyc/${userId}/`);
 
       throw new AppError(
         belongsToAnotherUser ? ErrorCodes.FORBIDDEN : ErrorCodes.INVALID_ARGUMENT,
@@ -74,10 +67,7 @@ export class ExtractKycNicOcrUseCase {
       throw invalidDocument();
     }
 
-    const bytes = await this.storage.getObjectBytes(
-      objectKey,
-      KYC_DOCUMENT_MAX_BYTES,
-    );
+    const bytes = await this.storage.getObjectBytes(objectKey, KYC_DOCUMENT_MAX_BYTES);
 
     if (!bytes) {
       throw new AppError(

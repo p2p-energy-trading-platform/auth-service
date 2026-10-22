@@ -16,9 +16,9 @@ function setup() {
     getObjectBytes: vi.fn<FileStorage['getObjectBytes']>().mockResolvedValue(imageBytes),
   };
 
-  const ocr = vi.fn<() => Promise<string>>().mockResolvedValue(
-    'NIC: 199012012345\nNAME: KUMAR SILVA\nDATE OF BIRTH: 12/01/1990',
-  );
+  const ocr = vi
+    .fn<() => Promise<string>>()
+    .mockResolvedValue('NIC: 199012012345\nNAME: KUMAR SILVA\nDATE OF BIRTH: 12/01/1990');
 
   const useCase = new ExtractKycNicOcrUseCase(storage, ocr);
 
@@ -29,28 +29,23 @@ describe('ExtractKycNicOcrUseCase', () => {
   it('extracts suggestions from the authenticated user’s uploaded document', async () => {
     const { storage, ocr, useCase } = setup();
 
-    await expect(
-      useCase.execute({ userId: 'user-123', objectKey: documentKey }),
-    ).resolves.toEqual({
+    await expect(useCase.execute({ userId: 'user-123', objectKey: documentKey })).resolves.toEqual({
       nicNumber: '199012012345',
       dateOfBirth: '1990-01-12',
       fullName: 'KUMAR SILVA',
     });
 
     expect(storage.getObjectInfo).toHaveBeenCalledWith(documentKey);
-    expect(storage.getObjectBytes).toHaveBeenCalledWith(
-      documentKey,
-      10 * 1024 * 1024,
-    );
+    expect(storage.getObjectBytes).toHaveBeenCalledWith(documentKey, 10 * 1024 * 1024);
     expect(ocr).toHaveBeenCalledWith(imageBytes, 'image/jpeg');
   });
 
   it('requires an authenticated user', async () => {
     const { storage, useCase } = setup();
 
-    await expect(
-      useCase.execute({ userId: '', objectKey: documentKey }),
-    ).rejects.toMatchObject({ code: 'UNAUTHENTICATED' });
+    await expect(useCase.execute({ userId: '', objectKey: documentKey })).rejects.toMatchObject({
+      code: 'UNAUTHENTICATED',
+    });
 
     expect(storage.getObjectInfo).not.toHaveBeenCalled();
   });
