@@ -1,6 +1,22 @@
-import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import type { CreateUploadUrlInput, FileStorage, StoredObjectInfo } from './provider.js';
+
+const DEFAULT_MAX_READ_BYTES = 10 * 1024 * 1024;
+
+function destroyBodyIfSupported(body: unknown): void {
+  if (typeof body !== 'object' || body === null) return;
+
+  const destroy = (body as { destroy?: unknown }).destroy;
+  if (typeof destroy === 'function') {
+    destroy.call(body);
+  }
+}
 
 export interface S3FileStorageOptions {
   /** Endpoint this service uses, e.g. http://minio:9000 inside Docker. Omit for AWS S3. */
@@ -48,6 +64,61 @@ export class S3FileStorage implements FileStorage {
       expiresIn: input.expiresInSeconds,
       signableHeaders: new Set(['content-type', 'content-length']),
     });
+  }
+
+  async getObjectBytes(
+    key: string,
+    maxBytes: number = DEFAULT_MAX_READ_BYTES,
+  ): Promise<Uint8Array | null> {
+    if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0 || maxBytes > DEFAULT_MAX_READ_BYTES) {
+      throw new RangeError('Invalid maximum object read size');
+    }
+
+    try {
+      const result = await this.client.send(
+        new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+
+      if (!result.Body) {
+        return null;
+      }
+
+      if (result.ContentLength !== undefined && result.ContentLength > maxBytes) {
+        destroyBodyIfSupported(result.Body);
+        throw new RangeError('Stored object exceeds the maximum read size');
+      }
+
+      const chunks: Uint8Array[] = [];
+      let totalBytes = 0;
+
+      for await (const chunk of result.Body as AsyncIterable<Uint8Array>) {
+        const bytes = chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk);
+        totalBytes += bytes.byteLength;
+
+        if (totalBytes > maxBytes) {
+          destroyBodyIfSupported(result.Body);
+          throw new RangeError('Stored object exceeds the maximum read size');
+        }
+
+        chunks.push(bytes);
+      }
+
+      const output = new Uint8Array(totalBytes);
+      let offset = 0;
+
+      for (const chunk of chunks) {
+        output.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+
+      return output;
+    } catch (error) {
+      if (isNotFound(error)) {
+        return null;
+      }
+
+      throw error;
+    }
   }
 
   async getObjectInfo(key: string): Promise<StoredObjectInfo | null> {

@@ -27,6 +27,7 @@ import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
 import { KycRepository } from '../features/onboarding/repository.js';
 import { SubmitKycUseCase } from '../features/onboarding/submit-kyc.js';
 import { CreateKycUploadUrlUseCase } from '../features/onboarding/create-kyc-upload-url.js';
+import { ExtractKycNicOcrUseCase } from '../features/onboarding/extract-kyc-nic-ocr.js';
 import { S3FileStorage } from '../infrastructure/storage/s3-storage.js';
 import { LoginWithGoogleUseCase } from '../features/authentication/login-with-google.js';
 import { GoogleClient } from '../infrastructure/oauth/google-client.js';
@@ -137,6 +138,7 @@ export default fp(async (fastify) => {
     kycRepository,
     kycDocumentStorage,
   );
+  const extractKycNicOcrUseCase = new ExtractKycNicOcrUseCase(kycDocumentStorage);
 
   const loginWithGoogleUseCase = new LoginWithGoogleUseCase(
     userRepository,
@@ -168,6 +170,7 @@ export default fp(async (fastify) => {
     resendOtpUseCase,
     submitKycUseCase,
     createKycUploadUrlUseCase,
+    extractKycNicOcrUseCase,
     loginWithGoogleUseCase,
   });
 

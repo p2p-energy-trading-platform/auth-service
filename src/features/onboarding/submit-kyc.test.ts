@@ -10,7 +10,7 @@ const validInput = {
   userId: 'user-123',
   fullName: 'Jane Doe',
   dateOfBirth: '1990-01-01',
-  dubaiId: '784-1990-1234567-1',
+  nicNumber: '199000112345',
   documentPath: DOCUMENT_KEY,
 };
 
@@ -20,7 +20,7 @@ function savedSubmission(): KycSubmission {
     userId: 'user-123',
     fullName: 'Jane Doe',
     dateOfBirth: '1990-01-01',
-    dubaiId: '784-1990-1234567-1',
+    nicNumber: '199000112345',
     documentPath: DOCUMENT_KEY,
     state: 'PENDING',
     rejectionReason: null,
@@ -54,6 +54,7 @@ function setup(
           ? { sizeBytes: 2048, contentType: 'application/pdf' }
           : options.document,
       ),
+    getObjectBytes: vi.fn<FileStorage['getObjectBytes']>(),
   };
 
   return { kyc, storage, useCase: new SubmitKycUseCase(kyc as never, storage) };
@@ -67,7 +68,7 @@ describe('SubmitKycUseCase', () => {
       useCase.execute({
         ...validInput,
         fullName: ' Jane Doe ',
-        dubaiId: ' 784-1990-1234567-1 ',
+        nicNumber: ' 199000112345 ',
         documentPath: ` ${DOCUMENT_KEY} `,
       }),
     ).resolves.toMatchObject({ state: 'PENDING' });

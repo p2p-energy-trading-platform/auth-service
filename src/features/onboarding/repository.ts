@@ -6,7 +6,7 @@ export interface KycSubmission {
   userId: string;
   fullName: string;
   dateOfBirth: string;
-  dubaiId: string;
+  nicNumber: string;
   documentPath: string;
   state: OnboardingState;
   rejectionReason: string | null;
@@ -19,7 +19,7 @@ export interface SaveKycSubmissionParams {
   userId: string;
   fullName: string;
   dateOfBirth: string;
-  dubaiId: string;
+  nicNumber: string;
   documentPath: string;
 }
 
@@ -33,7 +33,7 @@ export class KycRepository {
         k.user_id AS "userId",
         k.full_legal_name AS "fullName",
         to_char(k.date_of_birth, 'YYYY-MM-DD') AS "dateOfBirth",
-        k.dubai_id AS "dubaiId",
+        k.nic_number AS "nicNumber",
         k.document_path AS "documentPath",
         u.kyc_status AS state,
         k.rejection_reason AS "rejectionReason",
@@ -61,7 +61,7 @@ export class KycRepository {
         user_id,
         full_legal_name,
         date_of_birth,
-        dubai_id,
+        nic_number,
         document_path,
         status,
         rejection_reason,
@@ -71,7 +71,7 @@ export class KycRepository {
         id,
         ${params.fullName},
         ${params.dateOfBirth},
-        ${params.dubaiId},
+        ${params.nicNumber},
         ${params.documentPath},
         'PENDING',
         NULL,
@@ -80,7 +80,7 @@ export class KycRepository {
       ON CONFLICT (user_id) DO UPDATE SET
         full_legal_name = EXCLUDED.full_legal_name,
         date_of_birth = EXCLUDED.date_of_birth,
-        dubai_id = EXCLUDED.dubai_id,
+        nic_number = EXCLUDED.nic_number,
         document_path = EXCLUDED.document_path,
         status = EXCLUDED.status,
         rejection_reason = EXCLUDED.rejection_reason,
@@ -90,7 +90,7 @@ export class KycRepository {
         user_id AS "userId",
         full_legal_name AS "fullName",
         to_char(date_of_birth, 'YYYY-MM-DD') AS "dateOfBirth",
-        dubai_id AS "dubaiId",
+        nic_number AS "nicNumber",
         document_path AS "documentPath",
         status AS state,
         rejection_reason AS "rejectionReason",

@@ -17,10 +17,13 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-eng poppler-utils python3 py3-pillow
+
 COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
+COPY scripts/preprocess-nic-image.py ./scripts/preprocess-nic-image.py
 
 USER node
 

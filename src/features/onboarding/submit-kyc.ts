@@ -2,6 +2,7 @@ import { AppError } from '../../errors/app-error.js';
 import { ErrorCodes } from '../../errors/codes.js';
 import type { FileStorage } from '../../infrastructure/storage/provider.js';
 import { isAllowedKycDocument, isOwnKycDocumentKey } from './kyc-documents.js';
+import { isValidSriLankanNicNumber } from './nic-ocr.js';
 import { isIsoDate } from './kyc-helper.js';
 import type { KycRepository } from './repository.js';
 import { assertValidOnboardingTransition } from './state.js';
@@ -10,7 +11,7 @@ export interface SubmitKycInput {
   userId: string;
   fullName: string;
   dateOfBirth: string;
-  dubaiId: string;
+  nicNumber: string;
   documentPath: string;
 }
 
@@ -27,13 +28,13 @@ export class SubmitKycUseCase {
 
     const fullName = input.fullName.trim();
     const dateOfBirth = input.dateOfBirth.trim();
-    const dubaiId = input.dubaiId.trim();
+    const nicNumber = input.nicNumber.trim();
     const documentPath = input.documentPath.trim();
 
-    if (!fullName || !dateOfBirth || !dubaiId || !documentPath) {
+    if (!fullName || !dateOfBirth || !nicNumber || !documentPath) {
       throw new AppError(
         ErrorCodes.INVALID_ARGUMENT,
-        'Full name, date of birth, Dubai ID, and ID document are required',
+        'Full name, date of birth, NIC number, and ID document are required',
       );
     }
 
@@ -44,8 +45,16 @@ export class SubmitKycUseCase {
       );
     }
 
-    if (fullName.length > 255 || dubaiId.length > 100) {
+    if (fullName.length > 255) {
       throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'KYC information exceeds the allowed length');
+    }
+
+    if (!isValidSriLankanNicNumber(nicNumber)) {
+      throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Enter a valid Sri Lankan NIC number');
+    }
+
+    if (nicNumber.length > 12) {
+      throw new AppError(ErrorCodes.INVALID_ARGUMENT, 'Enter a valid Sri Lankan NIC number');
     }
 
     if (!isOwnKycDocumentKey(input.userId, documentPath)) {
@@ -75,7 +84,7 @@ export class SubmitKycUseCase {
       userId: input.userId,
       fullName,
       dateOfBirth,
-      dubaiId,
+      nicNumber,
       documentPath,
     });
 
