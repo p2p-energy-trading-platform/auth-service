@@ -110,8 +110,10 @@ describe('RegisterUseCase', () => {
     const email = emailProvider.send.mock.calls[0]![0];
     expect(email.to).toBe('user@example.com');
     expect(email.subject).toBe('Verify your GridX account');
-    expect(email.text).toContain('OTP');
-    expect(email.html).toContain('OTP Number');
+    const otp = otpRepo.setOtp.mock.calls[0]![1];
+    expect(email.text).toContain(otp);
+    expect(email.html).toContain(otp);
+    expect(email.html).toContain('Test User');
   });
 
   it('rejects when the email is missing', async () => {
