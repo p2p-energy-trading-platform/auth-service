@@ -4,7 +4,11 @@ import { ErrorCodes } from '../../errors/codes.js';
 import type { PasswordHasher } from '../../infrastructure/crypto/password-hasher.js';
 import type { RegisteredUser, UserRepository } from '../users/repository.js';
 import type { EmailProvider } from '../../infrastructure/email/provider.js';
-import type { OTPRepository } from '../../infrastructure/redis/otp-repository.js';
+import { signupOtpEmail } from '../../infrastructure/email/templates/auth-emails.js';
+import {
+  OTP_EXPIRY_MINUTES,
+  type OTPRepository,
+} from '../../infrastructure/redis/otp-repository.js';
 
 interface RegisterInput {
   name: string;
@@ -60,26 +64,7 @@ export class RegisterUseCase {
 
       await this.emailProvider.send({
         to: normalizedEmail,
-        subject: 'Verify your GridX account',
-        text: [
-          'You signed up to GridX website',
-          '',
-          `Enter the following OTP to verify your account = ${otp}`,
-          '',
-          `This OTp expires in 10 minutes.`,
-          '',
-          'If you did not sign up for gridx, you can ignore this email.',
-        ].join('\n'),
-        html: `
-          <p>You signed up to GridX website</p>
-          <p>
-            OTP Number: ${otp}
-          </p>
-          <p>
-            This OTP expires in 10 minutes.
-          </p>
-          <p>If you did not sign up for gridx, you can ignore this email.</p>
-        `.trim(),
+        ...signupOtpEmail({ name, otp, expiresInMinutes: OTP_EXPIRY_MINUTES }),
       });
 
       return user;

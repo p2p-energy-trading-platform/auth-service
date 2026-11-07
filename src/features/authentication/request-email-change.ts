@@ -1,6 +1,7 @@
 import { AppError } from '../../errors/app-error.js';
 import { ErrorCodes } from '../../errors/codes.js';
 import type { EmailProvider } from '../../infrastructure/email/provider.js';
+import { emailChangeEmail } from '../../infrastructure/email/templates/auth-emails.js';
 import type { TemporaryTokenStore } from '../../infrastructure/redis/temporary-token-store.js';
 import type { UserRepository } from '../users/repository.js';
 
@@ -74,27 +75,11 @@ export class RequestEmailChangeUseCase {
 
     await this.emailProvider.send({
       to: normalizedEmail,
-      subject: 'Verify your new GridX email address',
-      text: [
-        'We received a request to change the email address on your GridX account.',
-        '',
-        `Use this link to verify your new email address: ${verificationUrl.toString()}`,
-        '',
-        `This link expires in ${Math.floor(this.emailChangeTokenTtlSeconds / 60)} minutes.`,
-        '',
-        'If you did not request this change, you can ignore this email.',
-      ].join('\n'),
-      html: `
-        <p>We received a request to change the email address on your GridX account.</p>
-        <p>
-          <a href="${verificationUrl.toString()}">Verify your new email address</a>
-        </p>
-        <p>
-          This link expires in
-          ${Math.floor(this.emailChangeTokenTtlSeconds / 60)} minutes.
-        </p>
-        <p>If you did not request this change, you can ignore this email.</p>
-      `.trim(),
+      ...emailChangeEmail({
+        name: currentUser.name,
+        url: verificationUrl.toString(),
+        expiresInMinutes: Math.floor(this.emailChangeTokenTtlSeconds / 60),
+      }),
     });
 
     return {
