@@ -1,10 +1,13 @@
 import type { RedisClient } from './client.js';
 import { otpAttemptsKey, otpCooldownKey, otpKey } from './keys.js';
 
+export const OTP_TTL_SECONDS = 600;
+export const OTP_EXPIRY_MINUTES = OTP_TTL_SECONDS / 60;
+
 export class OTPRepository {
   constructor(
     private readonly redis: RedisClient,
-    private readonly ttlSeconds = 600,
+    private readonly ttlSeconds = OTP_TTL_SECONDS,
     private readonly maxAttempts = 5,
   ) {}
 
