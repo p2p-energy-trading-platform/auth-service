@@ -2,7 +2,11 @@ import { randomInt } from 'node:crypto';
 import { AppError } from '../../errors/app-error.js';
 import { ErrorCodes } from '../../errors/codes.js';
 import type { EmailProvider } from '../../infrastructure/email/provider.js';
-import type { OTPRepository } from '../../infrastructure/redis/otp-repository.js';
+import { resendOtpEmail } from '../../infrastructure/email/templates/auth-emails.js';
+import {
+  OTP_EXPIRY_MINUTES,
+  type OTPRepository,
+} from '../../infrastructure/redis/otp-repository.js';
 import type { UserRepository } from '../users/repository.js';
 
 export class ResendOtpUseCase {
@@ -42,12 +46,7 @@ export class ResendOtpUseCase {
 
     await this.emailProvider.send({
       to: normalizedEmail,
-      subject: 'Your new GridX verification OTP',
-      text: `Your new GridX verification OTP is: ${otp}. It expires in 10 minutes.`,
-      html: `
-        <p>Your new GridX verification OTP is: <strong>${otp}</strong></p>
-        <p>This OTP expires in 10 minutes.</p>
-      `,
+      ...resendOtpEmail({ name: user.name, otp, expiresInMinutes: OTP_EXPIRY_MINUTES }),
     });
   }
 }
