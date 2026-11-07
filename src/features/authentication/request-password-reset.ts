@@ -1,6 +1,7 @@
 import { AppError } from '../../errors/app-error.js';
 import { ErrorCodes } from '../../errors/codes.js';
 import type { EmailProvider } from '../../infrastructure/email/provider.js';
+import { passwordResetEmail } from '../../infrastructure/email/templates/auth-emails.js';
 import type { TemporaryTokenStore } from '../../infrastructure/redis/temporary-token-store.js';
 import type { UserRepository } from '../users/repository.js';
 
@@ -50,27 +51,11 @@ export class RequestPasswordResetUseCase {
 
     await this.emailProvider.send({
       to: normalizedEmail,
-      subject: 'Reset your GridX password',
-      text: [
-        'We received a request to reset your GridX password.',
-        '',
-        `Use this link to reset your password: ${resetUrl.toString()}`,
-        '',
-        `This link expires in ${Math.floor(this.passwordResetTokenTtlSeconds / 60)} minutes.`,
-        '',
-        'If you did not request a password reset, you can ignore this email.',
-      ].join('\n'),
-      html: `
-        <p>We received a request to reset your GridX password.</p>
-        <p>
-          <a href="${resetUrl.toString()}">Reset your password</a>
-        </p>
-        <p>
-          This link expires in
-          ${Math.floor(this.passwordResetTokenTtlSeconds / 60)} minutes.
-        </p>
-        <p>If you did not request a password reset, you can ignore this email.</p>
-      `.trim(),
+      ...passwordResetEmail({
+        name: user.name,
+        url: resetUrl.toString(),
+        expiresInMinutes: Math.floor(this.passwordResetTokenTtlSeconds / 60),
+      }),
     });
 
     return { success: true };
