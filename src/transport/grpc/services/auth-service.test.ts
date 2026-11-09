@@ -12,6 +12,7 @@ import type { VerifyEmailChangeUseCase } from '../../../features/authentication/
 import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
 import type { CreateKycUploadUrlUseCase } from '../../../features/onboarding/create-kyc-upload-url.js';
 import type { ExtractKycNicOcrUseCase } from '../../../features/onboarding/extract-kyc-nic-ocr.js';
+import type { GetUseCase } from '../../../features/authorization/get-user.js';
 import { describe, expect, it, vi } from 'vitest';
 import { Code, ConnectError } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
@@ -25,6 +26,8 @@ import {
   SubmitKycRequestSchema,
   CreateKycUploadUrlRequestSchema,
   ExtractKycNicOcrRequestSchema,
+  GetUserRequestSchema,
+  KycState,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { AppError } from '../../../errors/app-error.js';
 import { ErrorCodes } from '../../../errors/codes.js';
@@ -75,6 +78,9 @@ type MockDependencies = {
   extractKycNicOcrUseCase: {
     execute: ReturnType<typeof vi.fn<ExtractKycNicOcrUseCase['execute']>>;
   };
+  getUserUseCase: {
+    execute: ReturnType<typeof vi.fn<GetUseCase['execute']>>;
+  };
 };
 
 function createDependencies(): MockDependencies {
@@ -124,6 +130,9 @@ function createDependencies(): MockDependencies {
     extractKycNicOcrUseCase: {
       execute: vi.fn<ExtractKycNicOcrUseCase['execute']>(),
     },
+    getUserUseCase: {
+      execute: vi.fn<GetUseCase['execute']>(),
+    },
   };
 }
 
@@ -134,6 +143,35 @@ function createContext(userId?: string) {
 }
 
 describe('AuthService gRPC implementation', () => {
+  it.each([
+    KycState.UNSPECIFIED,
+    KycState.PENDING,
+    KycState.VERIFIED,
+    KycState.REJECTED,
+  ])('returns the user KYC state (%s)', async (kycState) => {
+    const deps = createDependencies();
+    deps.getUserUseCase.execute.mockResolvedValue({
+      id: 'user-123',
+      email: 'user@example.com',
+      status: 'ACTIVE',
+      role: 'user',
+      name: 'Test User',
+      kycState,
+    });
+
+    const service = createAuthServiceImplementation(deps as never);
+    const request = create(GetUserRequestSchema, {
+      userId: 'user-123',
+    });
+
+    const response = await service.getUser(request, createContext());
+
+    expect(deps.getUserUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-123',
+    });
+    expect(response.kycState).toBe(kycState);
+  });
+
   it('gets the authenticated user profile using x-gridx-user-id', async () => {
     const deps = createDependencies();
     deps.getProfileUseCase.execute.mockResolvedValue(profile);

@@ -198,6 +198,7 @@ export function createAuthServiceImplementation(
           status: result.status,
           role: result.role,
           name: result.name ?? '',
+          kycState: result.kycState,
         });
       } catch (error) {
         deps.logger.error({ err: error }, 'Failed to get user data');
