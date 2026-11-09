@@ -143,34 +143,32 @@ function createContext(userId?: string) {
 }
 
 describe('AuthService gRPC implementation', () => {
-  it.each([
-    KycState.UNSPECIFIED,
-    KycState.PENDING,
-    KycState.VERIFIED,
-    KycState.REJECTED,
-  ])('returns the user KYC state (%s)', async (kycState) => {
-    const deps = createDependencies();
-    deps.getUserUseCase.execute.mockResolvedValue({
-      id: 'user-123',
-      email: 'user@example.com',
-      status: 'ACTIVE',
-      role: 'user',
-      name: 'Test User',
-      kycState,
-    });
+  it.each([KycState.UNSPECIFIED, KycState.PENDING, KycState.VERIFIED, KycState.REJECTED])(
+    'returns the user KYC state (%s)',
+    async (kycState) => {
+      const deps = createDependencies();
+      deps.getUserUseCase.execute.mockResolvedValue({
+        id: 'user-123',
+        email: 'user@example.com',
+        status: 'ACTIVE',
+        role: 'user',
+        name: 'Test User',
+        kycState,
+      });
 
-    const service = createAuthServiceImplementation(deps as never);
-    const request = create(GetUserRequestSchema, {
-      userId: 'user-123',
-    });
+      const service = createAuthServiceImplementation(deps as never);
+      const request = create(GetUserRequestSchema, {
+        userId: 'user-123',
+      });
 
-    const response = await service.getUser(request, createContext());
+      const response = await service.getUser(request, createContext());
 
-    expect(deps.getUserUseCase.execute).toHaveBeenCalledWith({
-      userId: 'user-123',
-    });
-    expect(response.kycState).toBe(kycState);
-  });
+      expect(deps.getUserUseCase.execute).toHaveBeenCalledWith({
+        userId: 'user-123',
+      });
+      expect(response.kycState).toBe(kycState);
+    },
+  );
 
   it('gets the authenticated user profile using x-gridx-user-id', async () => {
     const deps = createDependencies();

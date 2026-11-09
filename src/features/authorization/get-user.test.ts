@@ -19,7 +19,9 @@ const createUserRepo = (user: AuthenticatedUser | null) => ({
 });
 
 const createKycRepo = (submission: { state: string } | null) => ({
-  findByUserId: vi.fn<(userId: string) => Promise<{ state: string } | null>>().mockResolvedValue(submission),
+  findByUserId: vi
+    .fn<(userId: string) => Promise<{ state: string } | null>>()
+    .mockResolvedValue(submission),
 });
 
 describe('GetUseCase', () => {

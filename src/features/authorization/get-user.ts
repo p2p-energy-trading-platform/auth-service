@@ -43,9 +43,7 @@ export class GetUseCase {
       status: user.status,
       role: user.role,
       name: user.name,
-      kycState: kycSubmission
-        ? toKycState(kycSubmission.state)
-        : KycState.UNSPECIFIED,
+      kycState: kycSubmission ? toKycState(kycSubmission.state) : KycState.UNSPECIFIED,
     };
   }
 }
