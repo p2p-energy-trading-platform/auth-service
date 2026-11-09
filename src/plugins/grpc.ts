@@ -113,7 +113,8 @@ export default fp(async (fastify) => {
     sessionRepository,
   );
 
-  const getUserUseCase = new GetUseCase(userRepository);
+  const kycRepository = new KycRepository(fastify.db);
+  const getUserUseCase = new GetUseCase(userRepository, kycRepository);
   const checkPermissionUseCase = new CheckPermissionUseCase(authorizationRepository);
   const verifyEmailChangeUseCase = new VerifyEmailChangeUseCase(
     userRepository,
@@ -132,7 +133,6 @@ export default fp(async (fastify) => {
     forcePathStyle: fastify.config.MINIO_FORCE_PATH_STYLE,
   });
 
-  const kycRepository = new KycRepository(fastify.db);
   const submitKycUseCase = new SubmitKycUseCase(kycRepository, kycDocumentStorage);
   const createKycUploadUrlUseCase = new CreateKycUploadUrlUseCase(
     kycRepository,
