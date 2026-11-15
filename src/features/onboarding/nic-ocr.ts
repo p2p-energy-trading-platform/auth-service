@@ -52,9 +52,15 @@ function dateFromNic(nic: string): string | null {
   // Sri Lankan NICs encode female dates using an offset of 500.
   if (dayOfYear > 500) dayOfYear -= 500;
 
-  const daysInYear = new Date(Date.UTC(year, 1, 29)).getUTCDate() === 29 ? 366 : 365;
+  // Sri Lankan NICs number days as if every year were a leap year (Feb = 29 days).
+  const isLeapYear = new Date(Date.UTC(year, 1, 29)).getUTCDate() === 29;
 
-  if (dayOfYear < 1 || dayOfYear > daysInYear) return null;
+  if (dayOfYear < 1 || dayOfYear > 366) return null;
+
+  if (!isLeapYear) {
+    if (dayOfYear === 60) return null; // 29 Feb does not exist in this year
+    if (dayOfYear > 60) dayOfYear -= 1;
+  }
 
   const date = new Date(Date.UTC(year, 0, dayOfYear));
 
@@ -104,11 +110,10 @@ function extractNic(text: string): string | null {
 }
 
 function extractPrintedDate(text: string): string | null {
-  const labelled = text.match(
-    /(?:DATE\s+OF\s+BIRTH|D\.?O\.?B\.?|BIRTH\s+DATE)\s*[:-]?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{4}|\d{4}[/.-]\d{1,2}[/.-]\d{1,2})/i,
-  );
+  const pattern =
+    /(?:DATE\s+OF\s+BIRTH|D\.?O\.?B\.?|BIRTH\s+DATE)\s*[:-]?\s*(?:\r?\n\s*)?(\d{1,2}[/.-]\d{1,2}[/.-]\d{4}|\d{4}[/.-]\d{1,2}[/.-]\d{1,2})/i;
 
-  const value = labelled?.[1];
+  const value = text.match(pattern)?.[1];
   if (!value) return null;
 
   const parts = value.split(/[/.-]/).map(Number);
@@ -129,35 +134,54 @@ function extractPrintedDate(text: string): string | null {
   return formatDate(third, second, first);
 }
 
+const OCR_DIGIT_TO_LETTER: Record<string, string> = {
+  '0': 'O',
+  '1': 'I',
+  '2': 'Z',
+  '5': 'S',
+  '6': 'G',
+  '8': 'B',
+};
+
 function extractFullName(text: string): string | null {
   const lines = text.split(/\r?\n/);
 
   for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    if (line === undefined) continue;
+    const line = lines[index]?.trim() ?? '';
 
-    const labelled = line.match(/^\s*(?:FULL\s+NAME|NAME\s+IN\s+FULL|NAME)\s*:?\s*(.*?)\s*$/i);
+    const labelled =
+      line.match(/^\s*(?:FULL\s+NAME|NAME\s+IN\s+FULL|NAME)\s*:?\s*(.*?)\s*$/i) ??
+      line.match(/^\s*AME\s*:\s*(.*?)\s*$/i);
 
-    if (!labelled) continue;
+    const nextLine = lines[index + 1]?.trim() ?? '';
+    const fragmentedLabel =
+      (/^NAME\s+IN$/i.test(line) && /^FULL$/i.test(nextLine)) ||
+      (/^FULL$/i.test(line) && /^NAME$/i.test(nextLine));
 
-    let capturedName = labelled[1]?.trim() ?? '';
+    if (!labelled && !fragmentedLabel) continue;
 
-    // Some card layouts put the value on the line after its label.
+    let capturedName = fragmentedLabel ? '' : (labelled?.[1]?.trim() ?? '');
+
     if (!capturedName) {
-      for (let next = index + 1; next < lines.length; next += 1) {
+      const valueIndex = index + (fragmentedLabel ? 2 : 1);
+
+      for (let next = valueIndex; next < lines.length; next += 1) {
         const candidate = lines[next]?.trim() ?? '';
-        if (candidate) {
-          // OCR may split the NAME label across adjacent lines.
-          // Strip only a recognizable label fragment, not arbitrary text.
-          capturedName = candidate
-            .replace(/^(?:ame|name|full\s+name|name\s+in\s+full)\s*:\s*/i, '')
-            .trim();
+        if (!candidate) continue;
+
+        if (/^(?:DATE\s+OF\s+BIRTH|D\.?O\.?B\.?|NIC(?:\s+NO)?|ADDRESS)\b/i.test(candidate)) {
           break;
         }
+
+        capturedName = candidate
+          .replace(/^(?:ame|name|full\s+name|name\s+in\s+full)\s*:\s*/i, '')
+          .trim();
+        break;
       }
     }
 
     const name = capturedName
+      .replace(/\d/g, (digit) => OCR_DIGIT_TO_LETTER[digit] ?? '')
       .split(/\r?\n/)[0]
       ?.replace(/\s+/g, ' ')
       .trim()
@@ -183,7 +207,12 @@ function extractFullName(text: string): string | null {
 
 export function parseSriLankanNicOcrText(text: string): SriLankanNicOcrResult {
   const nicNumber = extractNic(text);
-  const dateOfBirth = extractPrintedDate(text) ?? (nicNumber ? dateFromNic(nicNumber) : null);
+  const printedDate = extractPrintedDate(text);
+  const nicDate = nicNumber ? dateFromNic(nicNumber) : null;
+
+  // Prefer the date encoded in a successfully validated NIC number.
+  // The printed date may be misread by OCR.
+  const dateOfBirth = nicDate ?? printedDate;
 
   return {
     nicNumber,

@@ -96,12 +96,61 @@ async function runCommand(
   }
 }
 
+const NAME_WHITELIST = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz .:';
+
+function nameFromLettersOnlyText(text: string): string | null {
+  const lines = text.split(/\r?\n/).map((line) => line.trim());
+  const labelIndex = lines.findIndex((line) => /\bname\b/i.test(line));
+
+  if (labelIndex < 0) return null;
+
+  for (let index = labelIndex + 1; index < lines.length; index += 1) {
+    const candidate = (lines[index] ?? '')
+      .replace(/[^A-Za-z .'-]/g, '')
+      .replace(/^(?:[a-z]{1,2}\s+)+/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!candidate) continue;
+
+    return /^[A-Z][A-Z .'-]{2,}$/.test(candidate) ? candidate.replace(/[ .'-]+$/, '') : null;
+  }
+
+  return null;
+}
+
 async function runTesseract(imagePath: string, runner: NicOcrCommandRunner): Promise<string> {
   const processedImagePath = `${imagePath}.processed.png`;
 
   await runCommand(runner, 'python3', [PREPROCESS_SCRIPT_PATH, imagePath, processedImagePath]);
 
-  return runCommand(runner, 'tesseract', [processedImagePath, 'stdout', '-l', 'eng', '--psm', '1']);
+  const mainText = await runCommand(runner, 'tesseract', [
+    processedImagePath,
+    'stdout',
+    '-l',
+    'eng',
+    '--psm',
+    '1',
+  ]);
+
+  // Second pass restricted to letters so the name's first letter is not read as a digit.
+  try {
+    const lettersText = await runCommand(runner, 'tesseract', [
+      processedImagePath,
+      'stdout',
+      '-l',
+      'eng',
+      '--psm',
+      '6',
+      '-c',
+      `tessedit_char_whitelist=${NAME_WHITELIST}`,
+    ]);
+    const name = nameFromLettersOnlyText(lettersText);
+
+    return name ? `Name :\n${name}\n${mainText}` : mainText;
+  } catch {
+    return mainText;
+  }
 }
 
 async function extractFromPdf(
