@@ -211,7 +211,6 @@ describe('PDF OCR rendering', () => {
 const isLettersPass = (args: string[]) => args[args.indexOf('--psm') + 1] === '6';
 
 describe('letters-only name pass', () => {
-
   it('prepends the name read by the letters-only pass', async () => {
     const runner = vi.fn<NicOcrCommandRunner>(async (command, args) => {
       if (command === 'python3') return '';

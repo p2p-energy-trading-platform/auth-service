@@ -33,17 +33,13 @@ describe('parseSriLankanNicOcrText', () => {
 
   it('prefers the NIC-derived date when the printed date conflicts', () => {
     expect(
-      parseSriLankanNicOcrText(
-        'NIC: 199001412345\nDate of Birth: 15/01/1990',
-      ).dateOfBirth,
+      parseSriLankanNicOcrText('NIC: 199001412345\nDate of Birth: 15/01/1990').dateOfBirth,
     ).toBe('1990-01-14');
   });
 
   it('accepts matching printed and NIC-derived dates', () => {
     expect(
-      parseSriLankanNicOcrText(
-        'NIC: 199012012345\nDate of Birth: 29/04/1990',
-      ).dateOfBirth,
+      parseSriLankanNicOcrText('NIC: 199012012345\nDate of Birth: 29/04/1990').dateOfBirth,
     ).toBe('1990-04-29');
   });
 
@@ -86,22 +82,16 @@ describe('parseSriLankanNicOcrText', () => {
 
   it('handles NAME IN FULL when the label is split across lines', () => {
     expect(
-      parseSriLankanNicOcrText(
-        'NAME IN\nFULL\nKAMAL PERERA\nDATE OF BIRTH: 12/01/1998',
-      ).fullName,
+      parseSriLankanNicOcrText('NAME IN\nFULL\nKAMAL PERERA\nDATE OF BIRTH: 12/01/1998').fullName,
     ).toBe('KAMAL PERERA');
   });
 
   it('handles FULL NAME when the label is split across lines', () => {
-    expect(
-      parseSriLankanNicOcrText('FULL\nNAME\nKAMAL PERERA').fullName,
-    ).toBe('KAMAL PERERA');
+    expect(parseSriLankanNicOcrText('FULL\nNAME\nKAMAL PERERA').fullName).toBe('KAMAL PERERA');
   });
 
   it('extracts a printed DOB when its value is on the next line', () => {
-    expect(
-      parseSriLankanNicOcrText('DATE OF BIRTH\n12/01/1998').dateOfBirth,
-    ).toBe('1998-01-12');
+    expect(parseSriLankanNicOcrText('DATE OF BIRTH\n12/01/1998').dateOfBirth).toBe('1998-01-12');
   });
 
   it('does not infer a legal name from unrelated text', () => {
