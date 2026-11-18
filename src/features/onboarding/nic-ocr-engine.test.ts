@@ -16,7 +16,7 @@ describe('extractNicOcrText', () => {
 
     await expect(extractNicOcrText(jpeg, 'image/jpeg', runner)).resolves.toBe('NIC: 199012012345');
 
-    expect(runner).toHaveBeenCalledTimes(2);
+    expect(runner).toHaveBeenCalledTimes(3);
     expect(runner).toHaveBeenNthCalledWith(
       1,
       'python3',
@@ -141,11 +141,12 @@ describe('PDF OCR rendering', () => {
       'NIC: 199012012345',
     );
 
-    expect(runner).toHaveBeenCalledTimes(4);
+    expect(runner).toHaveBeenCalledTimes(5);
     expect(runner.mock.calls.map(([command]) => command)).toEqual([
       'pdfinfo',
       'pdftoppm',
       'python3',
+      'tesseract',
       'tesseract',
     ]);
     const onePageRender = runner.mock.calls.find(([command]) => command === 'pdftoppm');
@@ -187,13 +188,15 @@ describe('PDF OCR rendering', () => {
       'First page\nSecond page',
     );
 
-    expect(runner).toHaveBeenCalledTimes(6);
+    expect(runner).toHaveBeenCalledTimes(8);
     expect(runner.mock.calls.map(([command]) => command)).toEqual([
       'pdfinfo',
       'pdftoppm',
       'python3',
       'tesseract',
+      'tesseract',
       'python3',
+      'tesseract',
       'tesseract',
     ]);
     const twoPageRender = runner.mock.calls.find(([command]) => command === 'pdftoppm');
@@ -202,5 +205,32 @@ describe('PDF OCR rendering', () => {
     expect(twoPageRender?.[1]).toContain('-scale-to');
     expect(twoPageRender?.[1]).toContain('2500');
     expect(twoPageRender?.[1]).toContain('2');
+  });
+});
+
+const isLettersPass = (args: string[]) => args[args.indexOf('--psm') + 1] === '6';
+
+describe('letters-only name pass', () => {
+  it('prepends the name read by the letters-only pass', async () => {
+    const runner = vi.fn<NicOcrCommandRunner>(async (command, args) => {
+      if (command === 'python3') return '';
+      if (isLettersPass(args)) return 'Name :\nPONMUDY VIDURSHAN\nSex : Male';
+      return 'Name :\n5ONMUDY VIDURSHAN\nNIC: 199012012345';
+    });
+
+    const text = await extractNicOcrText(jpeg, 'image/jpeg', runner);
+
+    expect(text.startsWith('Name :\nPONMUDY VIDURSHAN\n')).toBe(true);
+    expect(text).toContain('NIC: 199012012345');
+  });
+
+  it('falls back to the normal OCR text when the letters-only pass fails', async () => {
+    const runner = vi.fn<NicOcrCommandRunner>(async (command, args) => {
+      if (command === 'python3') return '';
+      if (isLettersPass(args)) throw new Error('boom');
+      return 'NIC: 199012012345';
+    });
+
+    await expect(extractNicOcrText(jpeg, 'image/jpeg', runner)).resolves.toBe('NIC: 199012012345');
   });
 });

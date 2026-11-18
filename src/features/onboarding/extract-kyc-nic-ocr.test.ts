@@ -18,7 +18,7 @@ function setup() {
 
   const ocr = vi
     .fn<() => Promise<string>>()
-    .mockResolvedValue('NIC: 199012012345\nNAME: KUMAR SILVA\nDATE OF BIRTH: 12/01/1990');
+    .mockResolvedValue('NIC: 199001212345\nNAME: KUMAR SILVA\nDATE OF BIRTH: 12/01/1990');
 
   const useCase = new ExtractKycNicOcrUseCase(storage, ocr);
 
@@ -30,7 +30,7 @@ describe('ExtractKycNicOcrUseCase', () => {
     const { storage, ocr, useCase } = setup();
 
     await expect(useCase.execute({ userId: 'user-123', objectKey: documentKey })).resolves.toEqual({
-      nicNumber: '199012012345',
+      nicNumber: '199001212345',
       dateOfBirth: '1990-01-12',
       fullName: 'KUMAR SILVA',
     });
