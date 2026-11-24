@@ -24,6 +24,7 @@ import type { RefreshUseCase } from '../../features/authentication/refresh.js';
 import type { VerifyEmailUseCase } from '../../features/authentication/verify-email.js';
 import type { ResendOtpUseCase } from '../../features/authentication/resend-otp.js';
 import type { SubmitKycUseCase } from '../../features/onboarding/submit-kyc.js';
+import type { GetKycSubmissionUseCase } from '../../features/onboarding/get-kyc-submission.js';
 import type { CreateKycUploadUrlUseCase } from '../../features/onboarding/create-kyc-upload-url.js';
 import type { ExtractKycNicOcrUseCase } from '../../features/onboarding/extract-kyc-nic-ocr.js';
 import type { LoginWithGoogleUseCase } from '../../features/authentication/login-with-google.js';
@@ -48,6 +49,7 @@ export interface GrpcServerDependencies {
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
   submitKycUseCase: SubmitKycUseCase;
+  getKycSubmissionUseCase: GetKycSubmissionUseCase;
   createKycUploadUrlUseCase: CreateKycUploadUrlUseCase;
   extractKycNicOcrUseCase: ExtractKycNicOcrUseCase;
   loginWithGoogleUseCase: LoginWithGoogleUseCase;
@@ -87,6 +89,7 @@ export class GrpcServer {
         verifyEmailUseCase: this.deps.verifyEmailUseCase,
         resendOtpUseCase: this.deps.resendOtpUseCase,
         submitKycUseCase: this.deps.submitKycUseCase,
+        getKycSubmissionUseCase: this.deps.getKycSubmissionUseCase,
         createKycUploadUrlUseCase: this.deps.createKycUploadUrlUseCase,
         extractKycNicOcrUseCase: this.deps.extractKycNicOcrUseCase,
         loginWithGoogleUseCase: this.deps.loginWithGoogleUseCase,

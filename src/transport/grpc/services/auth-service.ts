@@ -14,6 +14,7 @@ import type { ResetPasswordUseCase } from '../../../features/authentication/rese
 import type { RequestEmailChangeUseCase } from '../../../features/authentication/request-email-change.js';
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
 import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
+import type { GetKycSubmissionUseCase } from '../../../features/onboarding/get-kyc-submission.js';
 import type { CreateKycUploadUrlUseCase } from '../../../features/onboarding/create-kyc-upload-url.js';
 import type { ExtractKycNicOcrUseCase } from '../../../features/onboarding/extract-kyc-nic-ocr.js';
 
@@ -36,6 +37,7 @@ import {
   VerifyEmailResponseSchema,
   ResendOtpResponseSchema,
   SubmitKycResponseSchema,
+  GetKycSubmissionResponseSchema,
   CreateKycUploadUrlResponseSchema,
   ExtractKycNicOcrResponseSchema,
   KycSubmissionSchema,
@@ -76,6 +78,7 @@ interface AuthServiceDependencies {
   verifyEmailUseCase: VerifyEmailUseCase;
   resendOtpUseCase: ResendOtpUseCase;
   submitKycUseCase: SubmitKycUseCase;
+  getKycSubmissionUseCase: GetKycSubmissionUseCase;
   createKycUploadUrlUseCase: CreateKycUploadUrlUseCase;
   extractKycNicOcrUseCase: ExtractKycNicOcrUseCase;
   loginWithGoogleUseCase: LoginWithGoogleUseCase;
@@ -466,6 +469,42 @@ export function createAuthServiceImplementation(
         });
       } catch (error) {
         deps.logger.error({ err: error }, 'Failed to submit kyc');
+        throw toGrpcError(error);
+      }
+    },
+
+    getKycSubmission: async (_req, context) => {
+      try {
+        const userId = context.requestHeader.get('x-gridx-user-id');
+
+        if (!userId) {
+          throw new AppError(ErrorCodes.UNAUTHENTICATED, 'Authenticated user is required');
+        }
+
+        const submission = await deps.getKycSubmissionUseCase.execute({ userId });
+        if (!submission) {
+          return create(GetKycSubmissionResponseSchema, {});
+        }
+
+        return create(GetKycSubmissionResponseSchema, {
+          submission: create(KycSubmissionSchema, {
+            id: submission.id,
+            userId: submission.userId,
+            fullName: submission.fullName,
+            dateOfBirth: create(DateSchema, parseKycDate(submission.dateOfBirth)),
+            nicNumber: submission.nicNumber,
+            documentPath: submission.documentPath,
+            state: toKycState(submission.state),
+            rejectionReason: submission.rejectionReason ?? '',
+            verifiedAt: submission.verifiedAt
+              ? timestampFromDate(new Date(submission.verifiedAt))
+              : undefined,
+            createdAt: timestampFromDate(new Date(submission.createdAt)),
+            updatedAt: timestampFromDate(new Date(submission.updatedAt)),
+          }),
+        });
+      } catch (error) {
+        deps.logger.error({ err: error }, 'Failed to get KYC submission');
         throw toGrpcError(error);
       }
     },

@@ -26,6 +26,7 @@ import { VerifyEmailUseCase } from '../features/authentication/verify-email.js';
 import { ResendOtpUseCase } from '../features/authentication/resend-otp.js';
 import { KycRepository } from '../features/onboarding/repository.js';
 import { SubmitKycUseCase } from '../features/onboarding/submit-kyc.js';
+import { GetKycSubmissionUseCase } from '../features/onboarding/get-kyc-submission.js';
 import { CreateKycUploadUrlUseCase } from '../features/onboarding/create-kyc-upload-url.js';
 import { ExtractKycNicOcrUseCase } from '../features/onboarding/extract-kyc-nic-ocr.js';
 import { S3FileStorage } from '../infrastructure/storage/s3-storage.js';
@@ -134,6 +135,7 @@ export default fp(async (fastify) => {
 
   const kycRepository = new KycRepository(fastify.db);
   const submitKycUseCase = new SubmitKycUseCase(kycRepository, kycDocumentStorage);
+  const getKycSubmissionUseCase = new GetKycSubmissionUseCase(kycRepository);
   const createKycUploadUrlUseCase = new CreateKycUploadUrlUseCase(
     kycRepository,
     kycDocumentStorage,
@@ -169,6 +171,7 @@ export default fp(async (fastify) => {
     verifyEmailUseCase,
     resendOtpUseCase,
     submitKycUseCase,
+    getKycSubmissionUseCase,
     createKycUploadUrlUseCase,
     extractKycNicOcrUseCase,
     loginWithGoogleUseCase,
