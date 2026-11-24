@@ -10,6 +10,7 @@ import type { RequestEmailChangeUseCase } from '../../../features/authentication
 import type { ResetPasswordUseCase } from '../../../features/authentication/reset-password.js';
 import type { VerifyEmailChangeUseCase } from '../../../features/authentication/verify-email-change.js';
 import type { SubmitKycUseCase } from '../../../features/onboarding/submit-kyc.js';
+import type { GetKycSubmissionUseCase } from '../../../features/onboarding/get-kyc-submission.js';
 import type { CreateKycUploadUrlUseCase } from '../../../features/onboarding/create-kyc-upload-url.js';
 import type { ExtractKycNicOcrUseCase } from '../../../features/onboarding/extract-kyc-nic-ocr.js';
 import { describe, expect, it, vi } from 'vitest';
@@ -25,6 +26,8 @@ import {
   SubmitKycRequestSchema,
   CreateKycUploadUrlRequestSchema,
   ExtractKycNicOcrRequestSchema,
+  GetKycSubmissionRequestSchema,
+  GetKycSubmissionResponseSchema,
 } from '@p2p-energy-trading-platform/typescript-sdk/gen/gridx/auth/v1/auth_pb';
 import { AppError } from '../../../errors/app-error.js';
 import { ErrorCodes } from '../../../errors/codes.js';
@@ -68,6 +71,9 @@ type MockDependencies = {
   };
   submitKycUseCase: {
     execute: ReturnType<typeof vi.fn<SubmitKycUseCase['execute']>>;
+  };
+  getKycSubmissionUseCase: {
+    execute: ReturnType<typeof vi.fn<GetKycSubmissionUseCase['execute']>>;
   };
   createKycUploadUrlUseCase: {
     execute: ReturnType<typeof vi.fn<CreateKycUploadUrlUseCase['execute']>>;
@@ -117,6 +123,9 @@ function createDependencies(): MockDependencies {
     },
     submitKycUseCase: {
       execute: vi.fn<SubmitKycUseCase['execute']>(),
+    },
+    getKycSubmissionUseCase: {
+      execute: vi.fn<GetKycSubmissionUseCase['execute']>(),
     },
     createKycUploadUrlUseCase: {
       execute: vi.fn<CreateKycUploadUrlUseCase['execute']>(),
@@ -174,6 +183,52 @@ describe('AuthService gRPC implementation', () => {
     );
 
     expect(deps.getProfileUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('returns the authenticated user KYC submission', async () => {
+    const deps = createDependencies();
+    deps.getKycSubmissionUseCase.execute.mockResolvedValue({
+      id: 'kyc-123',
+      userId: 'user-123',
+      fullName: 'Jane Doe',
+      dateOfBirth: '1990-01-01',
+      nicNumber: '199012012345',
+      documentPath: 'uploads/document.pdf',
+      state: 'PENDING',
+      rejectionReason: null,
+      verifiedAt: null,
+      createdAt: new Date('2026-10-05T00:00:00.000Z'),
+      updatedAt: new Date('2026-10-05T00:00:00.000Z'),
+    });
+
+    const service = createAuthServiceImplementation(deps as never);
+    const response = await service.getKycSubmission(
+      create(GetKycSubmissionRequestSchema),
+      createContext('user-123'),
+    );
+
+    expect(deps.getKycSubmissionUseCase.execute).toHaveBeenCalledWith({
+      userId: 'user-123',
+    });
+    expect(response.submission).toMatchObject({
+      id: 'kyc-123',
+      fullName: 'Jane Doe',
+      state: 1,
+      documentPath: 'uploads/document.pdf',
+    });
+  });
+
+  it('returns an empty KYC response when no submission exists', async () => {
+    const deps = createDependencies();
+    deps.getKycSubmissionUseCase.execute.mockResolvedValue(null);
+
+    const service = createAuthServiceImplementation(deps as never);
+    const response = await service.getKycSubmission(
+      create(GetKycSubmissionRequestSchema),
+      createContext('user-123'),
+    );
+
+    expect(response).toEqual(create(GetKycSubmissionResponseSchema));
   });
 
   it('requires authentication for UpdateProfile', async () => {
